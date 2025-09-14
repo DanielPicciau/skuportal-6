@@ -50,16 +50,25 @@
       </a>
       <span class="text-sm text-slate-400">SKU Portal</span>
       <div class="ml-auto flex items-center gap-2">
-        {% url 'inventory:dashboard' as dash_url %}
-        {% url 'inventory:home' as home_url %}
-        {% if request.path == dash_url %}
-          <a href="{{ home_url }}" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">Home</a>
+        {% if user.is_authenticated %}
+          {% url 'inventory:dashboard' as dash_url %}
+          {% url 'inventory:home' as home_url %}
+          {% if request.path == dash_url %}
+            <a href="{{ home_url }}" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">Home</a>
+          {% else %}
+            <a href="{{ dash_url }}" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">Dashboard</a>
+          {% endif %}
+          <a href="{% url 'inventory:product_create' %}" class="btn btn-primary text-center">New Product</a>
+          <a href="{% url 'inventory:export_csv' %}" class="hidden sm:inline-flex px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">CSV</a>
+          <a href="{% url 'inventory:export_xlsx' %}" class="hidden sm:inline-flex px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">XLSX</a>
+          <span class="px-3 py-2 text-sm text-slate-400">Signed in as {{ user.username }}</span>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20">Sign out</button>
+          </form>
         {% else %}
-          <a href="{{ dash_url }}" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">Dashboard</a>
+          <a href="{% url 'login' %}" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20">Sign in</a>
         {% endif %}
-        <a href="{% url 'inventory:product_create' %}" class="btn btn-primary text-center">New Product</a>
-        <a href="{% url 'inventory:export_csv' %}" class="hidden sm:inline-flex px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">CSV</a>
-        <a href="{% url 'inventory:export_xlsx' %}" class="hidden sm:inline-flex px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">XLSX</a>
         <button id="themeToggle" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20" title="Toggle theme">🌓</button>
       </div>
     </div>

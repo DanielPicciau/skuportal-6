@@ -14,6 +14,7 @@
         <button class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Search</button>
         <a href="{% url 'inventory:dashboard' %}" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10">Reset</a>
         <a href="{% url 'inventory:product_create' %}" class="btn btn-primary">Add</a>
+        <a href="{% url 'inventory:export_to_list_zip' %}" class="px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900" title="Download folders for all 'To List' items">Download To List</a>
       </form>
     </div>
   </div>

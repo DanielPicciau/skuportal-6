@@ -19,4 +19,5 @@ urlpatterns = [
     # Import disabled per request
     path('export/csv/', views.export_csv, name='export_csv'),
     path('export/xlsx/', views.export_xlsx, name='export_xlsx'),
+    path('export/to-list.zip', views.export_to_list_zip, name='export_to_list_zip'),
 ]

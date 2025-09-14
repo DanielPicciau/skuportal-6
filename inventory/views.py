@@ -13,6 +13,8 @@ from .constants import STATUSES, CATEGORIES
 from .models import Product, Variant, ProductImage
 from .forms import ProductForm, VariantForm, ImportFileForm
 from .csv_sync import schedule_csv_sync
+from django.utils.text import slugify
+import zipfile, json, os
 
 @login_required
 def dashboard(request):
@@ -294,10 +296,7 @@ def product_unarchive(request, pk):
     return redirect('inventory:product_detail', pk=pk)
 
 def signup(request):
-    # Allow signup only if no users exist yet
-    if User.objects.exists():
-        messages.info(request, 'Signup is disabled. Please log in.')
-        return redirect('login')
+    # Re-enabled: allow signup regardless of existing users
     if request.method == 'POST':
         username = (request.POST.get('username') or '').strip()
         pwd1 = request.POST.get('password1') or ''
@@ -468,4 +467,96 @@ def export_xlsx(request):
     bio.seek(0)
     resp = HttpResponse(bio.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     resp['Content-Disposition'] = 'attachment; filename="products.xlsx"'
+    return resp
+
+@login_required
+def export_to_list_zip(request):
+    to_list_qs = Variant.objects.select_related('product').prefetch_related('images').filter(status='To List', product__archived=False)
+    if not to_list_qs.exists():
+        messages.info(request, 'No variants with status "To List" to export.')
+        return redirect('inventory:dashboard')
+
+    mem = io.BytesIO()
+    with zipfile.ZipFile(mem, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+        # Root manifest for marketplaces that support CSV import
+        manifest_io = io.StringIO()
+        writer = csv.DictWriter(manifest_io, fieldnames=[
+            'main_sku','variant_sku','name','brand','category','size','colour','condition','price','qty','location','date','images'
+        ])
+        writer.writeheader()
+
+        for v in to_list_qs:
+            p = v.product
+            folder_name = f"{(v.variant_sku or p.main_sku) or 'SKU'}-{slugify(p.name) or 'item'}"
+            base = f"{folder_name}/"
+
+            # Description text (simple, editable after export)
+            desc_parts = [
+                f"{p.brand} {p.name}".strip(),
+                f"Category: {p.category}",
+                f"Size: {v.size}" if v.size else None,
+                f"Colour: {v.colour}" if v.colour else None,
+                f"Condition: {v.condition}" if v.condition else None,
+                f"SKU: {v.variant_sku or p.main_sku}",
+            ]
+            description = "\n".join([s for s in desc_parts if s])
+
+            meta = {
+                'product_name': p.name,
+                'brand': p.brand,
+                'category': p.category,
+                'main_sku': p.main_sku,
+                'variant_sku': v.variant_sku,
+                'size': v.size,
+                'colour': v.colour,
+                'condition': v.condition,
+                'qty': v.qty,
+                'price': float(v.price or 0),
+                'cost': float(v.cost or 0),
+                'location': v.location,
+                'date': v.date.strftime('%Y-%m-%d') if v.date else '',
+                'status': v.status,
+            }
+
+            # Per-item files
+            zf.writestr(base + 'product.json', json.dumps(meta, indent=2))
+            zf.writestr(base + 'description.txt', description)
+
+            # Images folder
+            img_count = 0
+            for idx, img in enumerate(v.images.all(), start=1):
+                try:
+                    path = img.image.path
+                except Exception:
+                    continue
+                try:
+                    with open(path, 'rb') as fh:
+                        ext = os.path.splitext(path)[1] or '.jpg'
+                        zf.writestr(f"{base}images/{idx:02d}{ext}", fh.read())
+                        img_count += 1
+                except FileNotFoundError:
+                    continue
+
+            # Manifest row
+            writer.writerow({
+                'main_sku': p.main_sku,
+                'variant_sku': v.variant_sku,
+                'name': p.name,
+                'brand': p.brand,
+                'category': p.category,
+                'size': v.size,
+                'colour': v.colour,
+                'condition': v.condition,
+                'price': f"{v.price:.2f}",
+                'qty': v.qty,
+                'location': v.location,
+                'date': v.date.strftime('%Y-%m-%d') if v.date else '',
+                'images': img_count,
+            })
+
+        zf.writestr('manifest.csv', manifest_io.getvalue())
+
+    mem.seek(0)
+    resp = HttpResponse(mem.getvalue(), content_type='application/zip')
+    resp['Content-Disposition'] = 'attachment; filename="to-list.zip"'
     return resp
