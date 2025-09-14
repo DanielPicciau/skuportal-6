@@ -66,3 +66,11 @@ Dashboard filtering uses the `STATUSES` list; search supports product fields and
 ## Media
 
 Image uploads are stored in `media/`. In development, Django serves them automatically with `DEBUG=True`.
+- If you use `mise` to install Python and hit a `.tar.zst` extraction error, this repo ships a `.mise.toml` that forces compile mode so no `.zst` is needed. Run:
+
+```bash
+mise trust          # trust repo config
+rm -rf ~/.local/share/mise/downloads/python/3.12.11 2>/dev/null || true
+mise install        # compiles python 3.12 per .mise.toml
+mise use -g python@3.12
+```

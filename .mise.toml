@@ -1,0 +1,7 @@
+[tools]
+python = "3.12"
+
+[settings]
+# Force compiling Python instead of downloading precompiled .tar.zst archives
+python_compile = true
+
