@@ -1,24 +1,25 @@
-ARG PYTHON_VERSION=3.13-slim
+FROM python:3.12-slim
 
-FROM python:${PYTHON_VERSION}
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+WORKDIR /app
 
-RUN mkdir -p /code
+# System deps (build-essential for any wheels, tk for pillow if needed)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    tk \
+ && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /code
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY requirements.txt /tmp/requirements.txt
-RUN set -ex && \
-    pip install --upgrade pip && \
-    pip install -r /tmp/requirements.txt && \
-    rm -rf /root/.cache/
-COPY . /code
+COPY . .
 
-ENV SECRET_KEY "sCD7I85FWFexLC22rFRd1fejucquM1EvucA4bCRsGu2wCcGeFa"
-RUN python manage.py collectstatic --noinput
+# Ensure private directory exists for CSV snapshots
+RUN mkdir -p /app/media/private
 
 EXPOSE 8000
 
-CMD ["gunicorn","--bind",":8000","--workers","2","skuportal.wsgi"]
+CMD ["/bin/sh", "-c", "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"]
+

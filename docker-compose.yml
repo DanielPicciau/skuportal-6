@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+      - CSV_SYNC_ENABLED=1
+      - DJANGO_SETTINGS_MODULE=skuportal.settings
+    volumes:
+      - .:/app
+    restart: unless-stopped
+

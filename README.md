@@ -74,3 +74,11 @@ rm -rf ~/.local/share/mise/downloads/python/3.12.11 2>/dev/null || true
 mise install        # compiles python 3.12 per .mise.toml
 mise use -g python@3.12
 ```
+- No mise? Use Docker (no system Python needed):
+
+```bash
+docker compose up --build
+# open http://127.0.0.1:8000
+```
+
+The container runs migrations automatically and serves the app on port 8000.
