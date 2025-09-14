@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load form_extras %}
+{% block content %}
+  <div class="max-w-3xl mx-auto">
+    <div class="card overflow-hidden">
+      <div class="p-5 border-b border-white/10 flex items-center gap-3">
+        <h2 class="text-2xl font-semibold">Add Variant</h2>
+        <span class="ml-auto text-sm text-slate-400">Product: <span class="font-mono bg-white/10 px-2 py-1 rounded">{{ product.main_sku }}</span></span>
+      </div>
+      <form method="post" enctype="multipart/form-data" class="p-5 space-y-6">
+        {% csrf_token %}
+        {% if form.errors %}
+        <div class="p-3 rounded-xl border text-sm bg-red-100 text-red-900 border-red-300 dark:bg-red-500/10 dark:text-red-200 dark:border-red-400/30">
+          Please fix the errors below.
+        </div>
+        <ul class="mt-2 text-sm text-red-400">
+          {% for field in form %}
+            {% for error in field.errors %}
+              <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Variant SKU (optional)</label>
+            {{ form.variant_sku|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Size</label>
+            {{ form.size|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Condition</label>
+            {{ form.condition|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Colour</label>
+            {{ form.colour|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Date</label>
+            {{ form.date|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Cost (£)</label>
+            {{ form.cost|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Price (£)</label>
+            {{ form.price|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Fees (£)</label>
+            {{ form.fees|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Quantity</label>
+            {{ form.qty|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Location</label>
+            {{ form.location|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Status</label>
+            {{ form.status|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <label class="block text-sm text-slate-300 mb-1">Images</label>
+          <input id="newImagesInput" name="new_images" type="file" accept="image/*" multiple class="hidden">
+          <button type="button" id="pickBtn" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Choose Files</button>
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <a href="{% url 'inventory:product_detail' product.pk %}" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Cancel</a>
+          <button class="px-5 py-2 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-semibold">Save Variant</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+    const real = document.getElementById('newImagesInput');
+    const pickBtn = document.getElementById('pickBtn');
+    if (pickBtn) {
+      pickBtn.addEventListener('click', () => real && real.click());
+    }
+
+    // Auto-calc fees on add based on price (Vinted defaults)
+    (function(){
+      const priceEl = document.querySelector('input[name="price"]');
+      const feesEl = document.querySelector('input[name="fees"]');
+      if(!priceEl || !feesEl) return;
+      const PCT = 0.05, FIX = 0.70;
+      const calc = ()=>{
+        const p = parseFloat(priceEl.value || '0');
+        if(!isNaN(p) && p > 0){ feesEl.value = (p * PCT + FIX).toFixed(2); }
+      };
+      priceEl.addEventListener('input', calc);
+      calc();
+    })();
+  </script>
+{% endblock %}

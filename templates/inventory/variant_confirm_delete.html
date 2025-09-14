@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="max-w-2xl mx-auto">
+    <div class="card p-6">
+      <h1 class="text-2xl font-semibold mb-2">Delete Variant</h1>
+      <p class="text-slate-300">Are you sure you want to delete variant <strong>{{ variant.variant_sku }}</strong> for <strong>{{ variant.product.name }}</strong>?</p>
+      <p class="text-slate-400 text-sm mt-2">This will remove its images too. This action cannot be undone.</p>
+      <form method="post" class="mt-6 flex gap-2">
+        {% csrf_token %}
+        <a href="{% url 'inventory:product_detail' variant.product.pk %}" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Cancel</a>
+        <button class="px-5 py-2 rounded-2xl bg-red-500 hover:bg-red-400 text-slate-900 font-semibold">Delete</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

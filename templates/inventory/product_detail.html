@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="max-w-5xl mx-auto space-y-6">
+    <div class="card p-5">
+      <div class="flex flex-wrap items-center gap-4">
+        <div class="text-sm text-slate-400">Main SKU</div>
+        <div class="font-mono text-lg bg-white/10 px-3 py-1 rounded-xl">{{ product.main_sku }}</div>
+        <div class="ml-auto text-sm text-slate-400">{{ product.brand }} — {{ product.category }}</div>
+      </div>
+      <h1 class="text-3xl font-bold mt-2">{{ product.name }}</h1>
+      <div class="mt-3 flex gap-2">
+        <a href="{% url 'inventory:product_edit' product.pk %}" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm">Edit Product</a>
+        <a href="{% url 'inventory:product_delete' product.pk %}" class="px-3 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-sm text-red-200">Delete Product</a>
+        {% if not product.archived %}
+        <form method="post" action="{% url 'inventory:product_archive' product.pk %}">
+          {% csrf_token %}
+          <button class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm">Archive</button>
+        </form>
+        {% else %}
+        <form method="post" action="{% url 'inventory:product_unarchive' product.pk %}">
+          {% csrf_token %}
+          <button class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm">Unarchive</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {% for v in product.variants.all %}
+      <div class="card p-5">
+        <div class="flex flex-wrap items-center gap-3 mb-2">
+          <div class="font-mono text-sm bg-white/10 rounded px-2 py-1">Variant {{ forloop.counter }}</div>
+          <div class="font-mono text-sm bg-white/10 rounded px-2 py-1">{{ v.variant_sku }}</div>
+          <div class="ml-auto text-sm text-slate-400">{{ v.status }}</div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4 text-sm">
+          <div><span class="text-slate-400">Size:</span> {{ v.size }}</div>
+          <div><span class="text-slate-400">Condition:</span> {{ v.condition }}</div>
+          <div><span class="text-slate-400">Colour:</span> {{ v.colour }}</div>
+          <div><span class="text-slate-400">Date:</span> {{ v.date }}</div>
+          <div><span class="text-slate-400">Cost:</span> £{{ v.cost }}</div>
+          <div><span class="text-slate-400">Price:</span> £{{ v.price }}</div>
+          <div><span class="text-slate-400">Fees:</span> £{{ v.fees }}</div>
+          <div><span class="text-slate-400">Net:</span> £{{ v.net }}</div>
+          <div><span class="text-slate-400">Profit:</span> £{{ v.profit }}</div>
+          <div><span class="text-slate-400">Margin:</span> {{ v.margin }}%</div>
+          <div><span class="text-slate-400">Qty:</span> {{ v.qty }}</div>
+          <div><span class="text-slate-400">Location:</span> {{ v.location }}</div>
+        </div>
+        <div class="mt-3 flex gap-2">
+          <a href="{% url 'inventory:variant_edit' v.pk %}" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm">Edit Variant / Add Images</a>
+          <a href="{% url 'inventory:variant_delete' v.pk %}" class="px-3 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-sm text-red-200">Delete Variant</a>
+        </div>
+        {% if v.images.all %}
+          <div class="grid md:grid-cols-4 gap-2 mt-4">
+            {% for img in v.images.all %}
+              <img src="{{ img.image.url }}" class="w-full h-40 object-cover rounded-xl" alt="">
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

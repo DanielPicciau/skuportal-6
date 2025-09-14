@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load form_extras %}
+{% block content %}
+  <div class="max-w-3xl mx-auto">
+    <div class="card overflow-hidden">
+      <div class="p-5 border-b border-white/10">
+        <h2 class="text-2xl font-semibold">New Product</h2>
+        <p class="text-slate-400 text-sm">Main SKU will be auto-generated.</p>
+      </div>
+      <form method="post" enctype="multipart/form-data" class="p-5 space-y-6">
+        {% csrf_token %}
+        {% if pform.errors or vform.errors %}
+        <div class="p-3 rounded-xl border text-sm bg-red-100 text-red-900 border-red-300 dark:bg-red-500/10 dark:text-red-200 dark:border-red-400/30">
+          Please fix the errors below.
+        </div>
+        <ul class="mt-2 text-sm text-red-400">
+          {% for field in pform %}
+            {% for error in field.errors %}
+              <li><strong>Product — {{ field.label }}:</strong> {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+          {% for field in vform %}
+            {% for error in field.errors %}
+              <li><strong>Variant — {{ field.label }}:</strong> {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+          {% for error in pform.non_field_errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+          {% for error in vform.non_field_errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Main SKU (optional)</label>
+            {{ pform.main_sku|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Product Name</label>
+            {{ pform.name|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Brand</label>
+            {{ pform.brand|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Category</label>
+            {{ pform.category|add_attr:"list=categoriesList"|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+            <datalist id="categoriesList">
+              {% for c in categories %}<option value="{{ c }}">{% endfor %}
+            </datalist>
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Size</label>
+            {{ vform.size|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Condition</label>
+            {{ vform.condition|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Colour</label>
+            {{ vform.colour|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Date</label>
+            {{ vform.date|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Cost (£)</label>
+            {{ vform.cost|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Price (£)</label>
+            {{ vform.price|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Fees (£)</label>
+            {{ vform.fees|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Quantity</label>
+            {{ vform.qty|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Location</label>
+            {{ vform.location|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Status</label>
+            {{ vform.status|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <label class="block text-sm text-slate-300 mb-1">Images</label>
+          <div class="border-2 border-dashed border-white/20 rounded-2xl p-6 text-center bg-white/5">
+            <p class="mb-2">Click to select images</p>
+            <input type="file" name="new_images" accept="image/*" multiple class="hidden" id="newImagesInput">
+            <button type="button" id="pickBtn" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Choose Files</button>
+            <div id="preview" class="mt-4 grid grid-cols-3 gap-2"></div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <a href="/" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Cancel</a>
+          <button class="px-5 py-2 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-semibold">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Simple helper to add Tailwind classes to Django form widgets without crispy-forms
+    window.addEventListener('load', () => { 
+      document.querySelectorAll('input,select,textarea').forEach(el => {
+        if(!el.className.includes('rounded')){
+          el.className += ' w-full bg-white/10 border border-white/10 rounded-xl p-3';
+        }
+      })
+    });
+    // Drag & Drop / Preview
+    const real = document.getElementById('newImagesInput');
+    const preview = document.getElementById('preview');
+    const pickBtn = document.getElementById('pickBtn');
+    pickBtn.addEventListener('click', () => real && real.click());
+    if (real) real.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    function handleFiles(files){
+      Array.from(files).forEach(file => {
+        if(!file.type.startsWith('image/')) return;
+        const img = document.createElement('img');
+        img.className = 'h-24 w-full object-cover rounded-xl';
+        img.src = URL.createObjectURL(file);
+        preview.appendChild(img);
+      });
+    }
+
+    // Auto-calc fees based on price (Vinted defaults)
+    (function(){
+      const priceEl = document.querySelector('input[name="price"]');
+      const feesEl = document.querySelector('input[name="fees"]');
+      if(!priceEl || !feesEl) return;
+      const PCT = 0.05, FIX = 0.70;
+      const calc = ()=>{
+        const p = parseFloat(priceEl.value || '0');
+        if(!isNaN(p) && p > 0){ feesEl.value = (p * PCT + FIX).toFixed(2); }
+      };
+      priceEl.addEventListener('input', calc);
+      // initialize once on load
+      calc();
+    })();
+  </script>
+{% endblock %}

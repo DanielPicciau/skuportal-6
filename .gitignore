@@ -1,0 +1,20 @@
+# Python / Django
+__pycache__/
+*.py[cod]
+*.sqlite3
+db.sqlite3
+*.log
+.venv/
+
+# Local media and private data
+media/
+!media/.gitkeep
+*.csv
+inventory.csv
+
+# Node / misc
+node_modules/
+.DS_Store
+.env
+.env.*
+

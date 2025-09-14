@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="max-w-2xl mx-auto">
+    <div class="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
+      <div class="p-5 border-b border-white/10">
+        <h2 class="text-2xl font-semibold">Import Products</h2>
+        <p class="text-slate-400 text-sm">Upload a CSV or XLSX matching the template.</p>
+      </div>
+      <form method="post" enctype="multipart/form-data" class="p-5 space-y-4">
+        {% csrf_token %}
+        {{ form.file }}
+        <div class="flex justify-end gap-2 pt-2">
+          <a href="/" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Cancel</a>
+          <button class="px-5 py-2 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-slate-900 font-semibold">Import</button>
+        </div>
+      </form>
+      <div class="p-5 border-t border-white/10 text-sm text-slate-300">
+        <p class="mb-2 font-semibold">Columns expected:</p>
+        <code class="block bg-black/30 p-3 rounded-xl overflow-x-auto">Main SKU (optional), Product Name, Brand, Category, Size, Condition, Colour, Date, Cost, Price, Fees, Qty, Location, Status</code>
+      </div>
+    </div>
+  </div>
+{% endblock %}
