@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-3">{{ v.product.name }}</h1>
+    {% with img=v.images.all.0 %}
+      {% if img %}
+        <img src="{{ img.image.url }}" class="w-full h-80 object-cover rounded-xl" alt="">
+      {% endif %}
+    {% endwith %}
+    <div class="mt-3 text-slate-300">Brand: {{ v.product.brand }} • Category: {{ v.product.category }}</div>
+    <div class="mt-1 text-slate-300">Size: {{ v.size }}{% if v.colour %} • {{ v.colour }}{% endif %}</div>
+    <div class="mt-3 text-3xl font-extrabold">£{{ v.price|floatformat:2 }}</div>
+    <form method="post" class="mt-4 flex items-center gap-2">
+      {% csrf_token %}
+      <input type="number" name="qty" value="1" min="1" class="w-20 bg-white/10 border border-white/10 rounded-xl p-2">
+      <button class="btn btn-primary">Add to cart</button>
+      <a href="{% url 'store_cart' %}" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">View cart</a>
+    </form>
+  </div>
+{% endblock %}

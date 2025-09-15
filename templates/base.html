@@ -9,28 +9,19 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="{% static 'brand.css' %}">
   <script>
-    // Theme handling: apply at earliest to avoid FOUC
-    function applyTheme(theme){
+    // Force dark theme and remove toggle logic
+    function applyTheme(){
       const html = document.documentElement;
       const body = document.body;
-      html.classList.remove('dark','light');
-      html.classList.add(theme);
-      // Body palette swap
+      html.classList.remove('light');
+      html.classList.add('dark');
       if(body){
-        body.classList.remove('bg-slate-900','text-slate-100','brand-gradient','bg-slate-100','text-slate-900');
-        if(theme === 'dark'){
-          body.classList.add('bg-slate-900','text-slate-100','brand-gradient');
-        } else {
-          body.classList.add('bg-slate-100','text-slate-900');
-        }
+        body.classList.remove('bg-slate-100','text-slate-900');
+        body.classList.add('bg-slate-900','text-slate-100','brand-gradient');
       }
     }
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    // Set <html> theme class ASAP to reduce FOUC
-    document.documentElement.classList.remove('dark','light');
-    document.documentElement.classList.add(savedTheme);
-    // Defer body class manipulation until DOM is ready
-    document.addEventListener('DOMContentLoaded', () => applyTheme(savedTheme));
+    document.documentElement.classList.add('dark');
+    document.addEventListener('DOMContentLoaded', applyTheme);
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,41 +30,41 @@
     body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji'; }
   </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen {% if user.is_authenticated and user.is_staff and not user.is_superuser %}cmgr{% endif %}">
   <nav class="sticky top-0 z-50 backdrop-blur-md bg-white/70 dark:bg-slate-900/70 border-b border-black/10 dark:border-white/10 text-slate-800 dark:text-slate-100">
-    <div class="max-w-6xl mx-auto px-4 py-2 flex items-center gap-4">
-      <a href="/" class="flex items-center gap-2">
+    <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-3 sm:gap-4">
+      <a href="/" class="flex items-center gap-2 min-w-0">
         <picture>
           <source srcset="{% static 'branding/logo_neon.png' %}" media="(prefers-color-scheme: dark)">
-          <img src="{% static 'branding/logo_pop.png' %}" alt="Closet Archive" class="h-10 w-auto logo-drop select-none">
+          <img src="{% static 'branding/logo_pop.png' %}" alt="Closet Archive" class="h-8 md:h-10 w-auto logo-drop select-none">
         </picture>
       </a>
-      <span class="text-sm text-slate-400">SKU Portal</span>
-      <div class="ml-auto flex items-center gap-2">
+      <span class="text-xs sm:text-sm text-slate-400 truncate">SKU Portal</span>
+      <div class="ml-auto flex items-center gap-2 overflow-x-auto">
         {% if user.is_authenticated %}
           {% url 'inventory:dashboard' as dash_url %}
           {% url 'inventory:home' as home_url %}
           {% if request.path == dash_url %}
-            <a href="{{ home_url }}" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">Home</a>
+            <a href="{{ home_url }}" class="hidden md:inline-flex px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">Home</a>
           {% else %}
-            <a href="{{ dash_url }}" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">Dashboard</a>
+            <a href="{{ dash_url }}" class="hidden md:inline-flex px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">Dashboard</a>
           {% endif %}
-          <a href="{% url 'inventory:product_create' %}" class="btn btn-primary text-center">New Product</a>
-          <a href="{% url 'inventory:export_csv' %}" class="hidden sm:inline-flex px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">CSV</a>
-          <a href="{% url 'inventory:export_xlsx' %}" class="hidden sm:inline-flex px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-center">XLSX</a>
-          <span class="px-3 py-2 text-sm text-slate-400">Signed in as {{ user.username }}</span>
-          <form method="post" action="{% url 'logout' %}">
+          <a href="{% url 'inventory:product_create' %}" class="hidden md:inline-flex btn btn-primary text-center">New Product</a>
+          <!-- CSV export moved to Settings -->
+          <!-- XLSX export moved to Settings -->
+          <a href="{% url 'inventory:settings' %}" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20">Settings</a>
+          <span class="hidden lg:inline px-3 py-2 text-sm text-slate-400">{{ user.username }}</span>
+          <form method="post" action="{% url 'logout' %}" class="hidden md:block">
             {% csrf_token %}
             <button type="submit" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20">Sign out</button>
           </form>
         {% else %}
           <a href="{% url 'login' %}" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20">Sign in</a>
         {% endif %}
-        <button id="themeToggle" class="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20" title="Toggle theme">🌓</button>
       </div>
     </div>
   </nav>
-  <main class="max-w-6xl mx-auto p-4">
+  <main class="max-w-6xl mx-auto p-4 pb-24 md:pb-4">
     {% for message in messages %}
       <div class="mb-3 p-3 rounded-xl border text-sm bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-200 dark:border-emerald-400/30">{{ message }}</div>
     {% endfor %}
@@ -83,13 +74,6 @@
     Closet Archive — Crafted with Django + Tailwind.
   </footer>
   <script>
-    document.getElementById('themeToggle').addEventListener('click', ()=>{
-      const current = (localStorage.getItem('theme') || 'dark');
-      const next = current === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('theme', next);
-      applyTheme(next);
-    });
-
     // Reveal on scroll + count-up numbers + progress width
     (function(){
       const onReady = (fn)=> document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);
@@ -140,37 +124,7 @@
           } else { run(); }
         });
 
-        // Tilt effect for widgets (subtle parallax)
-        const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if(!reduceMotion){
-          const widgets = Array.from(document.querySelectorAll('.widget'));
-          const tiltMax = 6; // degrees
-          widgets.forEach(w => {
-            w.setAttribute('data-tilt','');
-            let raf = null;
-            let targetRX = 0, targetRY = 0;
-            const onMove = (e)=>{
-              const rect = w.getBoundingClientRect();
-              const cx = rect.left + rect.width/2;
-              const cy = rect.top + rect.height/2;
-              const dx = (e.clientX - cx) / rect.width;
-              const dy = (e.clientY - cy) / rect.height;
-              targetRY = Math.max(-tiltMax, Math.min(tiltMax, dx * tiltMax));
-              targetRX = Math.max(-tiltMax, Math.min(tiltMax, -dy * tiltMax));
-              if(!raf){ raf = requestAnimationFrame(apply); }
-            };
-            const onLeave = ()=>{
-              targetRX = 0; targetRY = 0;
-              if(!raf){ raf = requestAnimationFrame(apply); }
-            };
-            const apply = ()=>{
-              w.style.transform = `rotateX(${targetRX}deg) rotateY(${targetRY}deg)`;
-              raf = null;
-            };
-            w.addEventListener('mousemove', onMove);
-            w.addEventListener('mouseleave', onLeave);
-          });
-        }
+        // Simplified: removed tilt effect for calmer motion
         // Button ripple
         document.addEventListener('click', (e)=>{
           const btn = e.target.closest('.btn');
@@ -188,5 +142,17 @@
       });
     })();
   </script>
+  <!-- Mobile bottom nav -->
+  {% if user.is_authenticated %}
+  <nav class="fixed bottom-0 inset-x-0 md:hidden z-40 backdrop-blur bg-slate-900/70 border-t border-white/10">
+    <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-3 gap-2 text-sm">
+      {% url 'inventory:home' as home_url %}
+      {% url 'inventory:dashboard' as dash_url %}
+      <a href="{{ home_url }}" class="px-3 py-2 rounded-xl bg-white/10 text-center">Home</a>
+      <a href="{% url 'inventory:product_create' %}" class="px-3 py-2 rounded-xl bg-emerald-500 text-slate-900 text-center">New</a>
+      <a href="{{ dash_url }}" class="px-3 py-2 rounded-xl bg-white/10 text-center">Dashboard</a>
+    </div>
+  </nav>
+  {% endif %}
 </body>
 </html>

@@ -6,6 +6,7 @@ app_name = 'inventory'
 urlpatterns = [
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('settings/', views.settings_view, name='settings'),
     path('bulk-update/', views.bulk_update, name='bulk_update'),
     path('product/new/', views.product_create, name='product_create'),
     path('product/<int:pk>/', views.product_detail, name='product_detail'),
@@ -16,6 +17,7 @@ urlpatterns = [
     path('product/<int:pk>/variant/add/', views.variant_create, name='variant_create'),
     path('variant/<int:pk>/edit/', views.variant_edit, name='variant_edit'),
     path('variant/<int:pk>/delete/', views.variant_delete, name='variant_delete'),
+    path('image/<int:pk>/delete/', views.image_delete, name='image_delete'),
     # Import disabled per request
     path('export/csv/', views.export_csv, name='export_csv'),
     path('export/xlsx/', views.export_xlsx, name='export_xlsx'),

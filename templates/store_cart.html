@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Your Cart</h1>
+    {% if items %}
+      <div class="space-y-3">
+        {% for it in items %}
+          <div class="card p-3 flex items-center gap-3">
+            {% with img=it.v.images.all.0 %}
+              {% if img %}
+                <img src="{{ img.image.url }}" class="w-20 h-20 object-cover rounded-lg" alt="">
+              {% endif %}
+            {% endwith %}
+            <div class="flex-1">
+              <div class="font-semibold">{{ it.v.product.name }}</div>
+              <div class="text-sm text-slate-400">{{ it.v.size }}{% if it.v.colour %} • {{ it.v.colour }}{% endif %} • £{{ it.v.price|floatformat:2 }}</div>
+            </div>
+            <form method="post" class="flex items-center gap-2">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="update">
+              <input type="hidden" name="vid" value="{{ it.v.id }}">
+              <input type="number" name="qty" value="{{ it.qty }}" min="0" class="w-20 bg-white/10 border border-white/10 rounded-xl p-2">
+              <button class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Update</button>
+            </form>
+            <div class="w-28 text-right font-semibold">£{{ it.line_total|floatformat:2 }}</div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="mt-4 flex items-center justify-between">
+        <div class="text-lg">Subtotal: <span class="font-bold">£{{ subtotal|floatformat:2 }}</span></div>
+        <div class="flex items-center gap-2">
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="clear">
+            <button class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Clear cart</button>
+          </form>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="checkout">
+            <button class="btn btn-primary">Checkout</button>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <div class="card p-6">Your cart is empty.</div>
+    {% endif %}
+  </div>
+{% endblock %}

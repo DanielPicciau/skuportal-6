@@ -26,3 +26,15 @@ def add_attr(field, arg):
     if not hasattr(field, 'as_widget'):
         return field
     return field.as_widget(attrs={key.strip(): value.strip()})
+
+@register.filter(name='mask_digits')
+def mask_digits(value):
+    """Replace all digits in the rendered value with 'x'.
+    Useful for masking monetary figures for non-admin viewers while preserving format.
+    """
+    try:
+        s = f"{value}"
+    except Exception:
+        s = str(value)
+    masked = ''.join('X' if ch.isdigit() else ch for ch in s)
+    return masked

@@ -1,40 +1,68 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load form_extras %}
 {% block content %}
-  <div class="hero card p-6 mb-6">
-    <div class="flex flex-wrap items-center gap-4">
-      <img src="{% static 'branding/logo_neon.png' %}" class="h-14 w-auto logo-drop" alt="Closet Archive">
-      <div>
-        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">Closet Archive</h1>
-        <p class="text-slate-300">Log products, auto-SKU, upload images, and export seamlessly.</p>
+  <!-- Sticky toolbar: search, filters, sort, quick actions -->
+  <div class="md:sticky md:top-2 z-40 card p-2 md:p-3 mb-3 md:mb-4">
+    <form method="get" class="flex flex-wrap items-center gap-2 text-sm md:text-base">
+      <input type="text" name="q" value="{{ q }}" placeholder="Search name, brand, or SKU…" class="flex-1 min-w-[160px] sm:min-w-[220px] md:w-96 bg-white/10 border border-white/10 rounded-xl p-2 md:p-3" />
+      <select name="cat" class="bg-white/10 border border-white/10 rounded-xl p-2 md:p-2.5 text-sm md:text-base">
+        <option value="">All categories…</option>
+        {% for c in categories %}
+          <option value="{{ c }}" {% if cat == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+      <select name="status" class="bg-white/10 border border-white/10 rounded-xl p-2 md:p-2.5 text-sm md:text-base">
+        <option value="">All statuses…</option>
+        {% for s in statuses %}
+          <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <select name="sort" class="bg-white/10 border border-white/10 rounded-xl p-2 md:p-2.5 text-sm md:text-base">
+        <option value="created_desc" {% if sort == 'created_desc' or not sort %}selected{% endif %}>Newest</option>
+        <option value="created_asc" {% if sort == 'created_asc' %}selected{% endif %}>Oldest</option>
+        <option value="name_az" {% if sort == 'name_az' %}selected{% endif %}>Name A–Z</option>
+        <option value="name_za" {% if sort == 'name_za' %}selected{% endif %}>Name Z–A</option>
+        <option value="brand_az" {% if sort == 'brand_az' %}selected{% endif %}>Brand A–Z</option>
+        <option value="brand_za" {% if sort == 'brand_za' %}selected{% endif %}>Brand Z–A</option>
+        <option value="sku_az" {% if sort == 'sku_az' %}selected{% endif %}>SKU A–Z</option>
+        <option value="sku_za" {% if sort == 'sku_za' %}selected{% endif %}>SKU Z–A</option>
+        <option value="category_az" {% if sort == 'category_az' %}selected{% endif %}>Category A–Z</option>
+        <option value="category_za" {% if sort == 'category_za' %}selected{% endif %}>Category Z–A</option>
+      </select>
+      <!-- Scope toggle separated from filters -->
+      <div class="flex items-center gap-2 ml-1 sm:ml-2">
+        <span class="text-xs sm:text-sm text-slate-400">Scope</span>
+        <div class="inline-flex rounded-xl overflow-hidden border border-white/10">
+          <a href="?{% if q %}q={{ q }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if cat %}cat={{ cat }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}archived=0"
+             class="px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm {% if not show_archived %}bg-white/20{% else %}bg-white/10 hover:bg-white/20{% endif %}">Active</a>
+          {% if not user.is_staff or user.is_superuser %}
+          <a href="?{% if q %}q={{ q }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if cat %}cat={{ cat }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}archived=1"
+             class="px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm {% if show_archived %}bg-white/20{% else %}bg-white/10 hover:bg-white/20{% endif %}">Archived</a>
+          {% endif %}
+        </div>
       </div>
-      <form method="get" class="ml-auto flex items-center gap-2 w-full md:w-auto">
-        <input type="text" name="q" value="{{ q }}" placeholder="Search name, brand, or SKU…" class="w-full md:w-80 bg-white/10 border border-white/10 rounded-xl p-3" />
-        {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
-        <button class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Search</button>
-        <a href="{% url 'inventory:dashboard' %}" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10">Reset</a>
-        <a href="{% url 'inventory:product_create' %}" class="btn btn-primary">Add</a>
-        <a href="{% url 'inventory:export_to_list_zip' %}" class="px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900" title="Download folders for all 'To List' items">Download To List</a>
-      </form>
+      <div class="ml-auto flex items-center gap-2">
+        <a href="{% url 'inventory:dashboard' %}?clear=1" class="px-2.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-sm md:text-base">Reset</a>
+        <button class="btn btn-primary">Apply</button>
+        <a href="{% url 'inventory:product_create' %}" class="hidden sm:inline-flex px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">New</a>
+        <a href="{% url 'inventory:export_to_list_zip' %}" class="hidden md:inline-flex px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900" title="Download folders for all 'To List' items">To List</a>
+      </div>
+    </form>
+    <div class="mt-2 flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm">
+      <a href="{% url 'inventory:dashboard' %}?{% if q %}q={{ q }}&{% endif %}{% if cat %}cat={{ cat }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}archived={% if show_archived %}1{% else %}0{% endif %}" class="px-3 py-1.5 pill {% if not status %}active{% endif %}">All</a>
+      {% for s in statuses %}
+        <a href="?status={{ s }}{% if q %}&q={{ q }}{% endif %}{% if cat %}&cat={{ cat }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}&archived={% if show_archived %}1{% else %}0{% endif %}"
+           class="px-3 py-1.5 pill {% if status == s %}active{% endif %}">{{ s }}</a>
+      {% endfor %}
+      <!-- Active/Archived pills removed to reduce confusion; use the Scope toggle above -->
     </div>
-  </div>
-
-  <div class="flex items-center gap-2 mb-4 flex-nowrap overflow-x-auto whitespace-nowrap">
-    <a href="{% url 'inventory:dashboard' %}" class="px-3 py-1.5 pill {% if not status %}active{% endif %}">All</a>
-    {% for s in statuses %}
-      <a href="?status={{ s }}{% if q %}&q={{ q }}{% endif %}"
-         class="px-3 py-1.5 pill {% if status == s %}active{% endif %}">{{ s }}</a>
-    {% endfor %}
-    <a href="?{% if q %}q={{ q }}&{% endif %}{% if status %}status={{ status }}&{% endif %}archived=0"
-       class="px-3 py-1.5 pill {% if not show_archived %}active{% endif %}">Active</a>
-    <a href="?{% if q %}q={{ q }}&{% endif %}{% if status %}status={{ status }}&{% endif %}archived=1"
-       class="px-3 py-1.5 pill {% if show_archived %}active{% endif %}">Archived</a>
   </div>
 
   <form method="post" action="{% url 'inventory:bulk_update' %}">
     {% csrf_token %}
     <div class="rounded-2xl bg-white/5 border border-white/10 p-3 mb-4 flex items-center gap-2 flex-wrap">
-      <label class="text-sm text-slate-300">Bulk edit:</label>
+      <label class="text-sm text-slate-300">Bulk edit</label>
       <select name="set_status" class="bg-white/10 border border-white/10 rounded-xl p-2">
         <option value="">Set status…</option>
         {% for s in statuses %}
@@ -46,59 +74,61 @@
       <datalist id="bulkCategoriesList">
         {% for c in categories %}<option value="{{ c }}">{% endfor %}
       </datalist>
-      <button class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900">Apply to selected</button>
-      <button type="button" id="toggleAll" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Select all</button>
+      <div class="ml-auto flex items-center gap-2">
+        <span id="selectedCount" class="text-sm text-slate-400">0 selected</span>
+        <button class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900">Apply</button>
+        <button type="button" id="toggleAll" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Toggle all</button>
+      </div>
     </div>
 
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
       {% for p in products %}
-        <label class="block card transition overflow-hidden relative cursor-pointer">
+        <label class="block widget transition overflow-hidden relative cursor-pointer">
           <input type="checkbox" name="ids" value="{{ p.pk }}" class="absolute top-3 left-3 h-5 w-5 rounded border-white/30 bg-white/10 z-10">
-          <div class="p-4">
+          <div class="p-3 md:p-4">
             <div class="flex items-center justify-between mb-2">
-              <div class="text-sm text-slate-400">Main SKU</div>
+              <div class="text-xs md:text-sm text-slate-400">Main SKU</div>
               <div class="badge">{{ p.main_sku }}</div>
             </div>
-            <h3 class="text-lg font-semibold line-clamp-2">
+            <h3 class="text-base md:text-lg font-semibold line-clamp-2">
               <a href="{% url 'inventory:product_detail' p.pk %}" class="hover:underline">{{ p.name }}</a>
             </h3>
-            <div class="mt-1 text-slate-400 text-sm">{{ p.brand }} — {{ p.category }}</div>
-            {% with v=p.variants.first %}
-              {% if v %}
-                <div class="mt-2 text-xs text-slate-400">Status: <span class="badge">{{ v.status }}</span></div>
-              {% endif %}
-            {% endwith %}
-            <div class="mt-3 flex items-center gap-2">
-              <a href="{% url 'inventory:variant_create' p.pk %}" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sm">Add Variant</a>
-              {% with vs=p.variants.all %}
-                {% for v in vs|slice:':2' %}
-                  <a href="{% url 'inventory:variant_delete' v.pk %}" class="px-2 py-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-xs text-red-200" title="Delete {{ v.variant_sku }}">Delete {{ v.variant_sku }}</a>
-                {% endfor %}
-              {% endwith %}
+            <div class="mt-1 text-slate-400 text-xs md:text-sm">{{ p.brand }} — {{ p.category }}</div>
+            <div class="mt-2 flex flex-wrap gap-1">
+              {% for v in p.variants.all|slice:':3' %}
+                <span class="text-[11px] md:text-xs bg-white/10 border border-white/10 rounded-lg px-1.5 py-1">{{ v.variant_sku }} • {{ v.status }}{% if v.price %} • £{{ v.price|floatformat:2 }}{% endif %}{% if v.qty %} ×{{ v.qty }}{% endif %}</span>
+              {% empty %}
+                <span class="text-xs text-slate-400">No variants yet</span>
+              {% endfor %}
+            </div>
+            <div class="mt-2 md:mt-3 flex items-center gap-2 flex-wrap">
+              <a href="{% url 'inventory:variant_create' p.pk %}" class="px-2.5 md:px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sm">Add Variant</a>
               {% if not p.archived %}
-              <form method="post" action="{% url 'inventory:product_archive' p.pk %}">
-                {% csrf_token %}
-                <button class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sm" title="Archive">Archive</button>
-              </form>
+                <form method="post" action="{% url 'inventory:product_archive' p.pk %}">
+                  {% csrf_token %}
+                  <button class="px-2.5 md:px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sm" title="Archive">Archive</button>
+                </form>
               {% else %}
-              <form method="post" action="{% url 'inventory:product_unarchive' p.pk %}">
-                {% csrf_token %}
-                <button class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sm" title="Restore">Unarchive</button>
-              </form>
+                <form method="post" action="{% url 'inventory:product_unarchive' p.pk %}">
+                  {% csrf_token %}
+                  <button class="px-2.5 md:px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sm" title="Restore">Unarchive</button>
+                </form>
               {% endif %}
+              <a href="{% url 'inventory:product_detail' p.pk %}" class="px-2.5 md:px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sm">Open</a>
             </div>
           </div>
           {% with v=p.variants.all.0 %}
             {% if v and v.images.all %}
               <div class="grid grid-cols-3 gap-1 p-2">
                 {% for img in v.images.all|slice:':3' %}
-                  <img src="{{ img.image.url }}" class="h-24 w-full object-cover rounded-lg" alt="">
+                  <img src="{{ img.image.url }}" class="h-20 md:h-24 w-full object-cover rounded-lg" alt="">
                 {% endfor %}
               </div>
             {% endif %}
           {% endwith %}
-          <div class="p-4 border-t border-white/10 text-sm text-slate-400">
-            {{ p.variants.count }} variant{{ p.variants.count|pluralize }}
+          <div class="p-3 md:p-4 border-t border-white/10 text-xs md:text-sm text-slate-400 flex items-center justify-between">
+            <div>{{ p.variants.count }} variant{{ p.variants.count|pluralize }}</div>
+            <div class="text-xs">Created #{{ p.id }}</div>
           </div>
         </label>
       {% empty %}
@@ -116,7 +146,18 @@
         const boxes = document.querySelectorAll('input[type=checkbox][name=ids]');
         const allChecked = Array.from(boxes).every(b=>b.checked);
         boxes.forEach(b=>b.checked = !allChecked);
+        updateSelectedCount();
       });
     }
+    function updateSelectedCount(){
+      const boxes = document.querySelectorAll('input[type=checkbox][name=ids]');
+      const count = Array.from(boxes).filter(b=>b.checked).length;
+      const el = document.getElementById('selectedCount');
+      if(el) el.textContent = `${count} selected`;
+    }
+    document.addEventListener('change', (e)=>{
+      if(e.target && e.target.matches('input[type=checkbox][name=ids]')) updateSelectedCount();
+    });
+    updateSelectedCount();
   </script>
 {% endblock %}

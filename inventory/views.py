@@ -7,6 +7,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth import login as auth_login
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
 from django.db.models import Q, Sum, F, DecimalField, ExpressionWrapper, Avg
 from decimal import Decimal
 from .constants import STATUSES, CATEGORIES
@@ -18,8 +20,33 @@ import zipfile, json, os
 
 @login_required
 def dashboard(request):
-    q = request.GET.get('q', '').strip()
-    status = request.GET.get('status', '').strip()
+    # Persist filters in session
+    session_key = 'dashboard_filters'
+    clear = request.GET.get('clear')
+    if clear:
+        request.session.pop(session_key, None)
+    keys = ('q', 'status', 'cat', 'sort', 'archived')
+    has_any = any(k in request.GET for k in keys)
+    if has_any:
+        filters = {
+            'q': (request.GET.get('q') or '').strip(),
+            'status': (request.GET.get('status') or '').strip(),
+            'cat': (request.GET.get('cat') or '').strip(),
+            'sort': (request.GET.get('sort') or '').strip(),
+            'archived': (request.GET.get('archived') or '').strip(),
+        }
+        request.session[session_key] = filters
+    else:
+        filters = request.session.get(session_key, {'q':'','status':'','cat':'','sort':'','archived':''})
+
+    q = filters.get('q','')
+    status = filters.get('status','')
+    cat = filters.get('cat','')
+    sort = filters.get('sort','')
+    archived_flag = (filters.get('archived','') in ('1','true','yes'))
+    # Co-managers cannot view archived
+    if request.user.is_authenticated and request.user.is_staff and not request.user.is_superuser:
+        archived_flag = False
     products_qs = Product.objects.prefetch_related('variants')
     if q:
         products_qs = products_qs.filter(
@@ -33,16 +60,28 @@ def dashboard(request):
         )
     if status and status in STATUSES:
         products_qs = products_qs.filter(variants__status=status)
-    show_archived = request.GET.get('archived', '') in ('1','true','yes')
-    if not show_archived:
-        products_qs = products_qs.filter(archived=False)
+    if cat:
+        products_qs = products_qs.filter(category=cat)
     # Archived filter: archived=1 shows ONLY archived; default shows ONLY active
-    show_archived = request.GET.get('archived', '') in ('1','true','yes')
-    if show_archived:
+    if archived_flag:
         products_qs = products_qs.filter(archived=True)
     else:
         products_qs = products_qs.filter(archived=False)
-    products = products_qs.order_by('-id').distinct()[:100]
+    # Sorting
+    sort_map = {
+        'created_desc': '-id',
+        'created_asc': 'id',
+        'name_az': 'name',
+        'name_za': '-name',
+        'brand_az': 'brand',
+        'brand_za': '-brand',
+        'sku_az': 'main_sku',
+        'sku_za': '-main_sku',
+        'category_az': 'category',
+        'category_za': '-category',
+    }
+    order_by = sort_map.get(sort, '-id')
+    products = products_qs.order_by(order_by).distinct()[:100]
     # Build category suggestions from constants + DB
     db_cats = list(Product.objects.values_list('category', flat=True).distinct())
     cat_suggestions = sorted({*(c for c in CATEGORIES), *(c for c in db_cats if c)})
@@ -50,9 +89,11 @@ def dashboard(request):
         'products': products,
         'q': q,
         'status': status,
+        'cat': cat,
+        'sort': sort,
         'statuses': STATUSES,
         'categories': cat_suggestions,
-        'show_archived': show_archived,
+        'show_archived': archived_flag,
     })
 
 @login_required
@@ -77,6 +118,55 @@ def home(request):
         'listed': listed_qs.aggregate(q=Sum('qty'))['q'] or 0,
         'draft': Variant.objects.filter(status='Draft').aggregate(q=Sum('qty'))['q'] or 0,
     }
+    # Additional metrics for richer dashboard
+    total_qty = Variant.objects.aggregate(q=Sum('qty'))['q'] or 0
+    sell_through_pct = int(((totals['sold'] or 0) / total_qty) * 100) if total_qty else 0
+    avg_list_price = unsold_qs.aggregate(a=Avg('price'))['a'] or Decimal('0')
+    avg_cost = Variant.objects.aggregate(a=Avg('cost'))['a'] or Decimal('0')
+    categories_count = Product.objects.values('category').distinct().count()
+    brands_count = Product.objects.exclude(brand='').values('brand').distinct().count()
+    avg_profit_per_sale = (total_profit / (totals['sold'] or 1)) if totals['sold'] else Decimal('0')
+    unsold_qty = max(0, (total_qty or 0) - (totals['sold'] or 0))
+    # Status distribution for donut
+    status_counts = {
+        'Sold': int(totals['sold'] or 0),
+        'Listed': int(totals['listed'] or 0),
+        'Draft': int(totals['draft'] or 0),
+    }
+    other_count = max(0, int(total_qty) - sum(status_counts.values()))
+    if other_count:
+        status_counts['Other'] = other_count
+
+    # Prepare conic-gradient segments for Inventory Mix donut
+    mix_palette = {
+        'Sold': '#10b981',
+        'Listed': '#27A7FF',
+        'Draft': '#f59e0b',
+        'Other': '#a78bfa',
+    }
+    status_mix_segments = []
+    acc = 0
+    if total_qty and total_qty > 0:
+        for label in ['Sold', 'Listed', 'Draft', 'Other']:
+            v = int(status_counts.get(label, 0) or 0)
+            if v <= 0:
+                continue
+            pct = int(round((v / int(total_qty)) * 100))
+            seg = {
+                'label': label,
+                'value': v,
+                'color': mix_palette[label],
+                'frm': acc,
+                'to': min(100, acc + pct),
+            }
+            status_mix_segments.append(seg)
+            acc = seg['to']
+        # Ensure last segment ends at 100% to avoid visual gap from rounding
+        if status_mix_segments:
+            status_mix_segments[-1]['to'] = 100
+    else:
+        # No data -> show a muted ring
+        status_mix_segments = []
     # Milestones (simple defaults)
     milestone_targets = [Decimal('100'), Decimal('500'), Decimal('1000'), Decimal('5000')]
     next_target = None
@@ -85,6 +175,9 @@ def home(request):
             next_target = m
             break
     progress_pct = int((total_profit / next_target * 100)) if next_target and next_target > 0 else 100
+    remaining_to_target = (next_target - total_profit) if next_target else Decimal('0')
+    if remaining_to_target < 0:
+        remaining_to_target = Decimal('0')
     # Top categories by sold count
     # Top categories with percentage bars
     raw_top_categories = list(
@@ -102,6 +195,7 @@ def home(request):
         }
         for row in raw_top_categories
     ]
+    top_category_name = raw_top_categories[0]['product__category'] if raw_top_categories else ''
 
     # Top brands by units sold and profit
     top_brands = list(
@@ -110,6 +204,19 @@ def home(request):
         .annotate(count=Sum('qty'), profit=Sum('profit'))
         .order_by('-count')[:5]
     )
+    best_profit_brand = (
+        sold_qs.select_related('product')
+        .values('product__brand')
+        .annotate(p=Sum('profit'))
+        .order_by('-p')
+        .first()
+    )
+
+    # Top locations by units (all variants)
+    top_locations = list(
+        Variant.objects.values('location').annotate(q=Sum('qty')).order_by('-q')[:5]
+    )
+    max_loc = max([row['q'] for row in top_locations], default=0)
 
     avg_margin = sold_qs.aggregate(m=Avg('margin'))['m'] or Decimal('0')
     recent = Variant.objects.select_related('product').order_by('-id')[:6]
@@ -117,10 +224,25 @@ def home(request):
         'total_profit': total_profit,
         'total_net': total_net,
         'totals': totals,
+        'total_qty': total_qty,
+        'sell_through_pct': sell_through_pct,
+        'avg_list_price': avg_list_price,
+        'avg_cost': avg_cost,
+        'categories_count': categories_count,
+        'brands_count': brands_count,
+        'avg_profit_per_sale': avg_profit_per_sale,
+        'unsold_qty': unsold_qty,
+        'status_counts': status_counts,
+        'status_mix_segments': status_mix_segments,
         'next_target': next_target,
         'progress_pct': progress_pct,
+        'remaining_to_target': remaining_to_target,
         'top_categories': top_categories,
         'top_brands': top_brands,
+        'top_locations': top_locations,
+        'top_locations_max': max_loc,
+        'top_category_name': top_category_name,
+        'best_profit_brand': best_profit_brand,
         'avg_margin': avg_margin,
         'stock_list_value': stock_list_value,
         'stock_cost_value': stock_cost_value,
@@ -222,7 +344,8 @@ def variant_edit(request, pk):
                 ProductImage.objects.create(variant=variant, image=f)
             messages.success(request, 'Variant updated.')
             schedule_csv_sync()
-            return redirect('inventory:product_detail', pk=variant.product.pk)
+            # Stay on edit page instead of closing to product detail
+            return redirect('inventory:variant_edit', pk=variant.pk)
         else:
             pass
     else:
@@ -274,6 +397,17 @@ def variant_delete(request, pk):
     return render(request, 'inventory/variant_confirm_delete.html', {'variant': variant})
 
 @login_required
+def image_delete(request, pk):
+    img = get_object_or_404(ProductImage, pk=pk)
+    variant = img.variant
+    if request.method == 'POST':
+        img.delete()
+        messages.success(request, 'Image deleted.')
+        schedule_csv_sync()
+        return redirect('inventory:variant_edit', pk=variant.pk)
+    return redirect('inventory:variant_edit', pk=variant.pk)
+
+@login_required
 def product_archive(request, pk):
     product = get_object_or_404(Product, pk=pk)
     if request.method == 'POST':
@@ -294,6 +428,138 @@ def product_unarchive(request, pk):
         schedule_csv_sync()
         return redirect('inventory:dashboard')
     return redirect('inventory:product_detail', pk=pk)
+
+def store_index(request):
+    # Secret development storefront: shows publicly visible listed items
+    q = (request.GET.get('q') or '').strip()
+    cat = (request.GET.get('cat') or '').strip()
+    brand = (request.GET.get('brand') or '').strip()
+    items = Variant.objects.select_related('product').prefetch_related('images').filter(
+        status='Listed', product__archived=False
+    )
+    if q:
+        items = items.filter(
+            Q(product__name__icontains=q) |
+            Q(product__brand__icontains=q) |
+            Q(product__category__icontains=q) |
+            Q(variant_sku__icontains=q) |
+            Q(size__icontains=q) |
+            Q(colour__icontains=q)
+        )
+    if cat:
+        items = items.filter(product__category=cat)
+    if brand:
+        items = items.filter(product__brand=brand)
+    items = items.order_by('-id')[:120]
+    categories = list(Product.objects.values_list('category', flat=True).distinct())
+    brands = list(Product.objects.values_list('brand', flat=True).distinct())
+    return render(request, 'store.html', {
+        'items': items,
+        'q': q,
+        'cat': cat,
+        'brand': brand,
+        'categories': [c for c in categories if c],
+        'brands': [b for b in brands if b],
+    })
+
+def _cart_get(request):
+    return request.session.get('store_cart', {})
+
+def _cart_set(request, cart):
+    request.session['store_cart'] = cart
+    request.session.modified = True
+
+def store_product(request, vid):
+    v = get_object_or_404(Variant.objects.select_related('product').prefetch_related('images'), pk=vid, status='Listed', product__archived=False)
+    if request.method == 'POST':
+        # Add to cart
+        qty = max(1, int(request.POST.get('qty', '1') or '1'))
+        cart = _cart_get(request)
+        cart[str(v.id)] = cart.get(str(v.id), 0) + qty
+        _cart_set(request, cart)
+        messages.success(request, f'Added {qty} × {v.product.name} ({v.size}) to cart.')
+        return redirect('store_cart')
+    return render(request, 'store_detail.html', {'v': v})
+
+def store_cart(request):
+    cart = _cart_get(request)
+    ids = [int(k) for k in cart.keys()]
+    variants = Variant.objects.select_related('product').prefetch_related('images').filter(id__in=ids, status='Listed', product__archived=False)
+    items = []
+    subtotal = Decimal('0')
+    for v in variants:
+        qty = int(cart.get(str(v.id), 0))
+        line = {'v': v, 'qty': qty, 'line_total': v.price * qty}
+        items.append(line)
+        subtotal += line['line_total']
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        vid = request.POST.get('vid')
+        if action == 'update' and vid:
+            qty = max(0, int(request.POST.get('qty', '1') or '1'))
+            if qty == 0:
+                cart.pop(vid, None)
+            else:
+                cart[vid] = qty
+            _cart_set(request, cart)
+            return redirect('store_cart')
+        elif action == 'clear':
+            _cart_set(request, {})
+            return redirect('store_cart')
+        elif action == 'checkout':
+            return redirect('store_checkout')
+    return render(request, 'store_cart.html', {'items': items, 'subtotal': subtotal})
+
+def store_checkout(request):
+    cart = _cart_get(request)
+    ids = [int(k) for k in cart.keys()]
+    variants = Variant.objects.select_related('product').filter(id__in=ids, status='Listed', product__archived=False)
+    subtotal = Decimal('0')
+    for v in variants:
+        subtotal += (v.price * (cart.get(str(v.id)) or 0))
+    if request.method == 'POST':
+        # Simulate order placed
+        _cart_set(request, {})
+        messages.success(request, 'Order placed! (dev preview — no payment processed)')
+        return redirect('store_index')
+    return render(request, 'store_checkout.html', {'subtotal': subtotal, 'count': sum(cart.values())})
+
+@login_required
+def settings_view(request):
+    pwd_form = PasswordChangeForm(user=request.user)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'change_password':
+            pwd_form = PasswordChangeForm(user=request.user, data=request.POST)
+            if pwd_form.is_valid():
+                user = pwd_form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, 'Password updated successfully.')
+                return redirect('inventory:settings')
+            else:
+                messages.error(request, 'Please correct the errors in the password form.')
+        elif action == 'create_comanager':
+            if not request.user.is_superuser:
+                messages.error(request, 'You do not have permission to create co-managers.')
+                return redirect('inventory:settings')
+            username = (request.POST.get('username') or '').strip()
+            p1 = request.POST.get('password1') or ''
+            p2 = request.POST.get('password2') or ''
+            if not username or not p1:
+                messages.error(request, 'Username and password are required for co-manager.')
+            elif p1 != p2:
+                messages.error(request, 'Passwords do not match for co-manager.')
+            elif User.objects.filter(username=username).exists():
+                messages.error(request, 'Username is already taken.')
+            else:
+                u = User.objects.create_user(username=username, password=p1)
+                u.is_staff = True
+                u.save()
+                messages.success(request, f'Co-manager account "{username}" created.')
+                return redirect('inventory:settings')
+    return render(request, 'inventory/settings.html', {
+        'pwd_form': pwd_form,
+    })
 
 def signup(request):
     # Re-enabled: allow signup regardless of existing users

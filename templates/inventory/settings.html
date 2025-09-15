@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load form_extras %}
+{% block content %}
+  <div class="max-w-4xl mx-auto grid grid-cols-1 gap-4">
+    <div class="widget p-5">
+      <div class="widget-accent accent-blue"></div>
+      <h1 class="text-2xl font-semibold mb-2">Settings</h1>
+      <p class="text-slate-400 text-sm">Manage your account, team, and data exports.</p>
+    </div>
+
+    <div class="widget p-5">
+      <div class="widget-accent accent-emerald"></div>
+      <h2 class="text-xl font-semibold mb-3">Account</h2>
+      <form method="post" class="space-y-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="change_password">
+        <div class="grid md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Current password</label>
+            {{ pwd_form.old_password|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">New password</label>
+            {{ pwd_form.new_password1|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Confirm new password</label>
+            {{ pwd_form.new_password2|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+          </div>
+        </div>
+        <button class="btn btn-primary">Update Password</button>
+      </form>
+    </div>
+
+    {% if user.is_superuser %}
+    <div class="widget p-5">
+      <div class="widget-accent accent-violet"></div>
+      <h2 class="text-xl font-semibold mb-3">Team</h2>
+      <form method="post" class="space-y-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_comanager">
+        <div class="grid md:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Username</label>
+            <input name="username" class="w-full bg-white/10 border border-white/10 rounded-xl p-3" required>
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Password</label>
+            <input name="password1" type="password" class="w-full bg-white/10 border border-white/10 rounded-xl p-3" required>
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300 mb-1">Confirm Password</label>
+            <input name="password2" type="password" class="w-full bg-white/10 border border-white/10 rounded-xl p-3" required>
+          </div>
+        </div>
+        <button class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Create Co‑manager</button>
+        <p class="text-xs text-slate-400">Creates a staff user with access to the portal (not a superuser).</p>
+      </form>
+    </div>
+    <div class="widget p-5">
+      <div class="widget-accent accent-amber"></div>
+      <h2 class="text-xl font-semibold mb-3">Data</h2>
+      <div class="flex items-center gap-2 flex-wrap">
+        <a href="{% url 'inventory:export_csv' %}" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Export CSV</a>
+        <a href="{% url 'inventory:export_xlsx' %}" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Export XLSX</a>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">Exports include products and variants. These actions moved from the dashboard to Settings.</p>
+    </div>
+    {% else %}
+    <div class="widget p-5">
+      <div class="widget-accent accent-amber"></div>
+      <h2 class="text-xl font-semibold mb-3">Limited Access</h2>
+      <p class="text-slate-300 text-sm">As a co‑manager, you can update your password here. Contact the account owner for team or data settings.</p>
+    </div>
+    {% endif %}
+  </div>
+{% endblock %}

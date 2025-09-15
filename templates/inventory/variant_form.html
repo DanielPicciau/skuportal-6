@@ -77,6 +77,28 @@
           <button type="button" id="pickBtn" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Choose Files</button>
         </div>
 
+        {% if variant.images.all %}
+        <div class="pt-2">
+          <label class="block text-sm text-slate-300 mb-2">Existing Images</label>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {% for img in variant.images.all %}
+              <div class="group relative rounded-xl overflow-hidden">
+                <img src="{{ img.image.url }}" alt="" class="w-full h-40 object-cover">
+                <!-- Overlay darken on hover (desktop), light always-on tint on touch -->
+                <div class="absolute inset-0 transition md:group-hover:bg-black/40" style="background: rgba(0,0,0,0.08);"></div>
+                <!-- Delete button: always visible on touch; appears on hover for desktop -->
+                <form method="post" action="{% url 'inventory:image_delete' img.pk %}" class="absolute top-2 right-2">
+                  {% csrf_token %}
+                  <button class="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition px-2.5 py-1.5 rounded-lg bg-red-500 hover:bg-red-400 text-xs font-semibold text-white shadow">
+                    Delete
+                  </button>
+                </form>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
         <div class="flex justify-end gap-2">
           <a href="{% url 'inventory:product_detail' variant.product.pk %}" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Cancel</a>
           <button class="px-5 py-2 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-semibold">Save Changes</button>

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="max-w-3xl mx-auto">
+    <div class="card p-5">
+      <h1 class="text-2xl font-bold mb-2">Checkout (Dev)</h1>
+      {% if count %}
+        <p class="text-slate-300 mb-4">Items: {{ count }} • Subtotal: £{{ subtotal|floatformat:2 }}</p>
+        <form method="post" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {% csrf_token %}
+          <input name="name" placeholder="Full name" class="bg-white/10 border border-white/10 rounded-xl p-3" required>
+          <input name="email" type="email" placeholder="Email" class="bg-white/10 border border-white/10 rounded-xl p-3" required>
+          <input name="address" placeholder="Shipping address" class="md:col-span-2 bg-white/10 border border-white/10 rounded-xl p-3" required>
+          <button class="btn btn-primary md:col-span-2">Place Order (Mock)</button>
+        </form>
+        <p class="text-xs text-slate-400 mt-3">This is a mock checkout for development. No payment will be processed.</p>
+      {% else %}
+        <p>Your cart is empty.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
