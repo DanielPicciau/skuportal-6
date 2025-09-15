@@ -85,3 +85,12 @@ CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', '0') == '1'
 SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0'))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', '0') == '1'
 SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', '0') == '1'
+
+# eBay Browse API integration (configure via environment)
+EBAY_ENABLED = os.getenv('EBAY_ENABLED', '0') == '1'
+EBAY_ENV = os.getenv('EBAY_ENV', 'production')  # 'production' or 'sandbox'
+EBAY_CLIENT_ID = os.getenv('EBAY_CLIENT_ID', '')
+EBAY_CLIENT_SECRET = os.getenv('EBAY_CLIENT_SECRET', '')
+EBAY_MARKETPLACE_ID = os.getenv('EBAY_MARKETPLACE_ID', 'EBAY_GB')  # e.g., EBAY_US, EBAY_GB
+EBAY_SCOPE = os.getenv('EBAY_SCOPE', 'https://api.ebay.com/oauth/api_scope/buy.browse.readonly')
+EBAY_TIMEOUT = int(os.getenv('EBAY_TIMEOUT', '10'))

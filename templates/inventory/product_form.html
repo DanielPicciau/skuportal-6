@@ -93,6 +93,25 @@
             <label class="block text-sm text-slate-300 mb-1">Status</label>
             {{ vform.status|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
           </div>
+          <!-- eBay price insights panel -->
+          <div class="md:col-span-2">
+            <div class="widget p-4 reveal" id="ebayPanel" tabindex="0">
+              <div class="widget-accent accent-blue"></div>
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="text-lg font-semibold">eBay Market Prices</h3>
+                <span id="ebayStatus" class="text-xs text-slate-400">Idle</span>
+              </div>
+              <p class="text-slate-400 text-sm mt-1">Live comps for your brand + name + size while you type.</p>
+              <div id="ebayStats" class="mt-3 hidden">
+                <div class="flex flex-wrap items-center gap-3 text-sm">
+                  <span class="badge"><span id="ebayCount">0</span> results</span>
+                  <span class="badge">Avg £<span id="ebayAvg">0.00</span></span>
+                  <span class="badge">Median £<span id="ebayMedian">0.00</span></span>
+                </div>
+              </div>
+              <div id="ebayList" class="mt-3 grid sm:grid-cols-2 gap-2"></div>
+            </div>
+          </div>
         </div>
 
         <div class="pt-2">
@@ -152,6 +171,83 @@
       priceEl.addEventListener('input', calc);
       // initialize once on load
       calc();
+    })();
+  </script>
+  <script>
+    // eBay Browse API integration (uses backend proxy /inventory/api/ebay/search)
+    (function(){
+      const brandEl = document.getElementById('{{ pform.brand.id_for_label }}') || document.querySelector('input[name="brand"]');
+      const nameEl = document.getElementById('{{ pform.name.id_for_label }}') || document.querySelector('input[name="name"]');
+      const sizeEl = document.getElementById('{{ vform.size.id_for_label }}') || document.querySelector('input[name="size"]');
+      const statusEl = document.getElementById('ebayStatus');
+      const statsWrap = document.getElementById('ebayStats');
+      const countEl = document.getElementById('ebayCount');
+      const avgEl = document.getElementById('ebayAvg');
+      const medianEl = document.getElementById('ebayMedian');
+      const listEl = document.getElementById('ebayList');
+
+      if(!brandEl || !nameEl) return;
+
+      let timer = null;
+      let lastQ = '';
+      function debounce(fn, ms){
+        return function(){
+          const ctx = this, args = arguments;
+          clearTimeout(timer);
+          timer = setTimeout(()=> fn.apply(ctx, args), ms);
+        }
+      }
+      function buildQuery(){
+        const bits = [];
+        const b = (brandEl.value||'').trim(); if(b) bits.push(b);
+        const n = (nameEl.value||'').trim(); if(n) bits.push(n);
+        const s = (sizeEl && sizeEl.value||'').trim(); if(s) bits.push('size ' + s);
+        return bits.join(' ').trim();
+      }
+      async function search(){
+        const q = buildQuery();
+        if(!q || q.length < 3 || q === lastQ){ return; }
+        lastQ = q;
+        statusEl.textContent = 'Searching…';
+        statsWrap.classList.add('hidden');
+        listEl.innerHTML = '';
+        try{
+          const url = new URL('{% url "inventory:ebay_search" %}', window.location.origin);
+          url.searchParams.set('q', q);
+          url.searchParams.set('limit', '10');
+          const res = await fetch(url.toString(), { credentials: 'same-origin' });
+          const data = await res.json();
+          if(!res.ok){ throw new Error(data && data.error || res.statusText); }
+          const stats = data.stats || {};
+          countEl.textContent = data.count || 0;
+          avgEl.textContent = (stats.avg ?? 0).toFixed ? stats.avg.toFixed(2) : Number(stats.avg||0).toFixed(2);
+          medianEl.textContent = (stats.median ?? 0).toFixed ? stats.median.toFixed(2) : Number(stats.median||0).toFixed(2);
+          statsWrap.classList.remove('hidden');
+          const items = (data.items||[]).slice(0,6);
+          listEl.innerHTML = items.map(it=>{
+            const price = it.price && it.price.value ? `£${parseFloat(it.price.value).toFixed(2)}` : '—';
+            const title = it.title || 'Listing';
+            const url = it.itemWebUrl || it.itemHref || '#';
+            return `
+              <a href="${url}" target="_blank" rel="noopener" class="card p-3 block hover:underline">
+                <div class="text-sm line-clamp-2">${title}</div>
+                <div class="mt-1 text-xs text-slate-400">${price}</div>
+              </a>`;
+          }).join('');
+          statusEl.textContent = `OK — ${data.count||0} results`;
+        }catch(err){
+          statusEl.textContent = 'Unavailable';
+          listEl.innerHTML = '<div class="text-sm text-slate-400">eBay not configured or rate limited.</div>';
+        }
+      }
+      const trigger = debounce(search, 500);
+      ['input','change'].forEach(ev=>{
+        brandEl.addEventListener(ev, trigger);
+        nameEl.addEventListener(ev, trigger);
+        sizeEl && sizeEl.addEventListener(ev, trigger);
+      });
+      // kick off once on load
+      setTimeout(search, 100);
     })();
   </script>
 {% endblock %}

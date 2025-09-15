@@ -2,7 +2,7 @@ import csv, io
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -314,6 +314,28 @@ def product_create(request):
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
     return render(request, 'inventory/product_detail.html', {'product': product})
+
+@login_required
+def ebay_search(request):
+    """Minimal JSON proxy for eBay Browse search.
+    GET /inventory/api/ebay/search?q=shoes&limit=5
+    """
+    q = (request.GET.get('q') or '').strip()
+    limit = int(request.GET.get('limit') or 10)
+    if not q:
+        return JsonResponse({'error': 'Missing q parameter'}, status=400)
+    # Lazy import so missing optional dependency (requests) doesn't block app startup
+    from .ebay import get_client
+    client = get_client()
+    if not client:
+        return JsonResponse({'error': 'eBay not configured; set EBAY_* settings and enable EBAY_ENABLED=1'}, status=503)
+    try:
+        data = client.search(q=q, limit=limit)
+        items = data.get('itemSummaries') or []
+        stats = client.summarize_prices(items)
+        return JsonResponse({'q': q, 'count': len(items), 'stats': stats, 'items': items})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=502)
 
 @login_required
 def product_edit(request, pk):
