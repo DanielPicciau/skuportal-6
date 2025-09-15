@@ -582,7 +582,8 @@ def settings_view(request):
             else:
                 messages.error(request, 'Please correct the errors in the password form.')
         elif action == 'create_comanager':
-            if not request.user.is_superuser:
+            # Allow any staff user (admin) to create co-managers
+            if not request.user.is_staff:
                 messages.error(request, 'You do not have permission to create co-managers.')
                 return redirect('inventory:settings')
             username = (request.POST.get('username') or '').strip()

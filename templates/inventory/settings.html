@@ -32,7 +32,7 @@
       </form>
     </div>
 
-    {% if user.is_superuser %}
+    {% if user.is_staff %}
     <div class="widget p-5">
       <div class="widget-accent accent-violet"></div>
       <h2 class="text-xl font-semibold mb-3">Team</h2>
@@ -70,7 +70,7 @@
     <div class="widget p-5">
       <div class="widget-accent accent-amber"></div>
       <h2 class="text-xl font-semibold mb-3">Limited Access</h2>
-      <p class="text-slate-300 text-sm">As a co‑manager, you can update your password here. Contact the account owner for team or data settings.</p>
+      <p class="text-slate-300 text-sm">You can update your password here. Team and data settings require staff access.</p>
     </div>
     {% endif %}
   </div>
