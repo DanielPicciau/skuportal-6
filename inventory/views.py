@@ -9,7 +9,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-from django.db.models import Q, Sum, F, DecimalField, ExpressionWrapper, Avg
+from django.db.models import Q, Sum, F, DecimalField, ExpressionWrapper, Avg, Min, Max
+import math
 from decimal import Decimal
 from .constants import STATUSES, CATEGORIES
 from .models import Product, Variant, ProductImage
@@ -432,8 +433,17 @@ def product_unarchive(request, pk):
 def store_index(request):
     # Secret development storefront: shows publicly visible listed items
     q = (request.GET.get('q') or '').strip()
-    cat = (request.GET.get('cat') or '').strip()
-    brand = (request.GET.get('brand') or '').strip()
+    sort = (request.GET.get('sort') or '').strip()
+    # Integer price bounds in increments of 5 for UI; convert to Decimal for DB filter
+    def _parse_int(v):
+        try:
+            if v in (None, ''):
+                return None
+            return int(v)
+        except Exception:
+            return None
+    min_price_int = _parse_int(request.GET.get('min_price'))
+    max_price_int = _parse_int(request.GET.get('max_price'))
     items = Variant.objects.select_related('product').prefetch_related('images').filter(
         status='Listed', product__archived=False
     )
@@ -446,20 +456,31 @@ def store_index(request):
             Q(size__icontains=q) |
             Q(colour__icontains=q)
         )
-    if cat:
-        items = items.filter(product__category=cat)
-    if brand:
-        items = items.filter(product__brand=brand)
-    items = items.order_by('-id')[:120]
-    categories = list(Product.objects.values_list('category', flat=True).distinct())
-    brands = list(Product.objects.values_list('brand', flat=True).distinct())
+    if min_price_int is not None:
+        items = items.filter(price__gte=Decimal(min_price_int))
+    if max_price_int is not None:
+        items = items.filter(price__lte=Decimal(max_price_int))
+    # Sorting
+    order_map = {
+        'price_asc': 'price',
+        'price_desc': '-price',
+        'newest': '-id',
+    }
+    items = items.order_by(order_map.get(sort, '-id'))
+    items = items[:120]
+    raw_bounds = Variant.objects.filter(status='Listed', product__archived=False).aggregate(mn=Min('price'), mx=Max('price'))
+    mn = raw_bounds['mn'] or Decimal('0')
+    mx = raw_bounds['mx'] or Decimal('0')
+    # Round to nearest 5s for slider defaults
+    mn5 = int(math.floor(float(mn) / 5.0) * 5)
+    mx5 = int(math.ceil(float(mx) / 5.0) * 5)
     return render(request, 'store.html', {
         'items': items,
         'q': q,
-        'cat': cat,
-        'brand': brand,
-        'categories': [c for c in categories if c],
-        'brands': [b for b in brands if b],
+        'sort': sort,
+        'min_price': min_price_int,
+        'max_price': max_price_int,
+        'bounds': {'mn': mn5, 'mx': mx5},
     })
 
 def _cart_get(request):

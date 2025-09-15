@@ -1,20 +1,71 @@
 {% extends 'base.html' %}
 {% block content %}
-  <div class="max-w-5xl mx-auto">
-    <h1 class="text-2xl font-bold mb-3">{{ v.product.name }}</h1>
-    {% with img=v.images.all.0 %}
-      {% if img %}
-        <img src="{{ img.image.url }}" class="w-full h-80 object-cover rounded-xl" alt="">
+  <style>
+    .gallery-main{ position:relative; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:1rem; }
+    .gallery-main img{ max-width:100%; height:auto; display:block; margin: 0 auto; }
+    .thumbs{ display:flex; gap:.5rem; overflow-x:auto; padding-top:.5rem; }
+    .thumbs img{ height:64px; width:auto; border-radius:.5rem; opacity:.6; border:1px solid rgba(255,255,255,.12); }
+    .thumbs img.active{ opacity:1; border-color: rgba(255,255,255,.35); }
+  </style>
+  <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-6">
+    <div>
+      <div class="gallery-main p-3" id="mainGallery">
+        {% with img=v.images.all.0 %}
+          {% if img %}
+            <img src="{{ img.image.url }}" alt="{{ v.product.name }} main image" id="mainImage">
+          {% else %}
+            <div class="h-64 flex items-center justify-center text-slate-400">No image</div>
+          {% endif %}
+        {% endwith %}
+        {% if v.images.all|length > 1 %}
+          <button type="button" class="store-arrow left btn-ghost js-stop" id="prevBtn" aria-label="Previous">‹</button>
+          <button type="button" class="store-arrow right btn-ghost js-stop" id="nextBtn" aria-label="Next">›</button>
+        {% endif %}
+      </div>
+      {% if v.images.all|length > 1 %}
+      <div class="thumbs no-scrollbar mt-2" id="thumbs">
+        {% for im in v.images.all %}
+          <img src="{{ im.image.url }}" data-src="{{ im.image.url }}" alt="thumb {{ forloop.counter }}" class="{% if forloop.first %}active{% endif %}">
+        {% endfor %}
+      </div>
       {% endif %}
-    {% endwith %}
-    <div class="mt-3 text-slate-300">Brand: {{ v.product.brand }} • Category: {{ v.product.category }}</div>
-    <div class="mt-1 text-slate-300">Size: {{ v.size }}{% if v.colour %} • {{ v.colour }}{% endif %}</div>
-    <div class="mt-3 text-3xl font-extrabold">£{{ v.price|floatformat:2 }}</div>
-    <form method="post" class="mt-4 flex items-center gap-2">
-      {% csrf_token %}
-      <input type="number" name="qty" value="1" min="1" class="w-20 bg-white/10 border border-white/10 rounded-xl p-2">
-      <button class="btn btn-primary">Add to cart</button>
-      <a href="{% url 'store_cart' %}" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">View cart</a>
-    </form>
+    </div>
+    <div>
+      <a href="/store/" class="text-sm text-slate-400 hover:underline">← Back to Store</a>
+      <div class="text-xs uppercase tracking-wide text-slate-400 mt-2">{{ v.product.brand }} • {{ v.product.category }}</div>
+      <h1 class="text-3xl font-extrabold mt-1">{{ v.product.name }}</h1>
+      <div class="mt-1 text-slate-300">Size {{ v.size }}{% if v.colour %} • {{ v.colour }}{% endif %}</div>
+      <div class="mt-4 text-4xl font-extrabold">£{{ v.price|floatformat:2 }}</div>
+      <div class="mt-1 text-xs text-slate-400">SKU: {{ v.variant_sku }}</div>
+      <form method="post" class="mt-5 flex items-center gap-2">
+        {% csrf_token %}
+        <input type="number" name="qty" value="1" min="1" class="w-24 bg-white/10 border border-white/10 rounded-xl p-2">
+        <button class="btn btn-primary">Add to cart</button>
+        <a href="{% url 'store_cart' %}" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">View cart</a>
+      </form>
+      <div class="mt-6 grid grid-cols-2 gap-3 text-sm">
+        <div class="card p-3"><div class="muted">Condition</div><div class="font-semibold">{{ v.condition }}</div></div>
+        <div class="card p-3"><div class="muted">Location</div><div class="font-semibold">{{ v.location }}</div></div>
+        <div class="card p-3"><div class="muted">Quantity</div><div class="font-semibold">{{ v.qty }}</div></div>
+        <div class="card p-3"><div class="muted">Date</div><div class="font-semibold">{{ v.date }}</div></div>
+      </div>
+      <p class="mt-4 text-xs text-slate-400">This is a development preview — no real checkout is processed.</p>
+    </div>
   </div>
+  {% if v.images.all|length > 1 %}
+  <script>
+    (function(){
+      const imgs = Array.from(document.querySelectorAll('#thumbs img'));
+      if(!imgs.length) return;
+      const main = document.getElementById('mainImage');
+      let idx = 0;
+      function show(i){ idx = (i+imgs.length)%imgs.length; main.src = imgs[idx].dataset.src; imgs.forEach((t,n)=> t.classList.toggle('active', n===idx)); }
+      imgs.forEach((t,n)=> t.addEventListener('click', ()=> show(n)));
+      const prev = document.getElementById('prevBtn');
+      const next = document.getElementById('nextBtn');
+      prev && prev.addEventListener('click', ()=> show(idx-1));
+      next && next.addEventListener('click', ()=> show(idx+1));
+    })();
+  </script>
+  {% endif %}
 {% endblock %}
