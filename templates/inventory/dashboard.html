@@ -59,7 +59,7 @@
     </div>
   </div>
 
-  <form method="post" action="{% url 'inventory:bulk_update' %}">
+  <form id="bulkForm" method="post" action="{% url 'inventory:bulk_update' %}">
     {% csrf_token %}
     <div class="rounded-2xl bg-white/5 border border-white/10 p-3 mb-4 flex items-center gap-2 flex-wrap">
       <label class="text-sm text-slate-300">Bulk edit</label>
@@ -84,7 +84,7 @@
     <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
       {% for p in products %}
         <label class="block widget transition overflow-hidden relative cursor-pointer">
-          <input type="checkbox" name="ids" value="{{ p.pk }}" class="absolute top-3 left-3 h-5 w-5 rounded border-white/30 bg-white/10 z-10">
+          <input type="checkbox" name="ids" value="{{ p.pk }}" form="bulkForm" class="absolute top-3 left-3 h-5 w-5 rounded border-white/30 bg-white/10 z-10">
           <div class="p-3 md:p-4">
             <div class="flex items-center justify-between mb-2">
               <div class="text-xs md:text-sm text-slate-400">Main SKU</div>

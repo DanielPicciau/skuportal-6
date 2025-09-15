@@ -31,6 +31,7 @@
   </style>
 </head>
 <body class="min-h-screen {% if user.is_authenticated and user.is_staff and not user.is_superuser %}cmgr{% endif %}">
+  <a href="#content" class="skip-link">Skip to content</a>
   <nav class="sticky top-0 z-50 backdrop-blur-md bg-white/70 dark:bg-slate-900/70 border-b border-black/10 dark:border-white/10 text-slate-800 dark:text-slate-100">
     <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-3 sm:gap-4">
       <a href="/" class="flex items-center gap-2 min-w-0">
@@ -64,9 +65,9 @@
       </div>
     </div>
   </nav>
-  <main class="max-w-6xl mx-auto p-4 pb-24 md:pb-4">
+  <main id="content" class="max-w-6xl mx-auto p-4 pb-24 md:pb-4" tabindex="-1">
     {% for message in messages %}
-      <div class="mb-3 p-3 rounded-xl border text-sm bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-200 dark:border-emerald-400/30">{{ message }}</div>
+      <div role="status" aria-live="polite" class="mb-3 p-3 rounded-xl border text-sm bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-200 dark:border-emerald-400/30">{{ message }}</div>
     {% endfor %}
     {% block content %}{% endblock %}
   </main>
@@ -144,7 +145,7 @@
   </script>
   <!-- Mobile bottom nav -->
   {% if user.is_authenticated %}
-  <nav class="fixed bottom-0 inset-x-0 md:hidden z-40 backdrop-blur bg-slate-900/70 border-t border-white/10">
+  <nav class="fixed bottom-0 inset-x-0 md:hidden z-40 backdrop-blur bg-slate-900/70 border-t border-white/10 mobile-nav">
     <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-3 gap-2 text-sm">
       {% url 'inventory:home' as home_url %}
       {% url 'inventory:dashboard' as dash_url %}
