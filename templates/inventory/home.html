@@ -8,7 +8,7 @@
     </div>
 
     <!-- Row 2: Profit + Stock (5 + 7 = 12) -->
-    <div class="md:col-span-5 widget p-5 reveal">
+    <div class="md:col-span-5 widget p-5 reveal" tabindex="0">
       <div class="widget-accent accent-emerald"></div>
       <div class="flex items-center justify-between">
         <div class="text-sm muted">Total Profit (Sold)</div>
@@ -16,6 +16,22 @@
       </div>
       <div class="metric-lg mt-2">£<span class="countup" data-target="{{ total_profit|floatformat:2 }}" data-decimals="2"></span></div>
       <div class="mt-2 muted text-sm">Net after platform fees and cost.</div>
+      <div class="widget-extra">
+        <div class="grid grid-cols-2 gap-2 mt-3 text-sm">
+          <div class="card p-3">
+            <div class="muted">Avg Profit / Sale</div>
+            <div class="font-semibold">£{{ avg_profit_per_sale|floatformat:2 }}</div>
+          </div>
+          <div class="card p-3">
+            <div class="muted">Top Category</div>
+            <div class="font-semibold">{{ top_category_name|default:'—' }}</div>
+          </div>
+          <div class="col-span-2 card p-3">
+            <div class="muted">Top Brand by Profit</div>
+            <div class="font-semibold">{% if best_profit_brand %}{{ best_profit_brand.product__brand|default:'—' }} • £{{ best_profit_brand.p|floatformat:2 }}{% else %}—{% endif %}</div>
+          </div>
+        </div>
+      </div>
       <!-- Tiny sparkline -->
       <svg class="mt-3 w-full h-10" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
@@ -30,7 +46,7 @@
       </svg>
     </div>
     <!-- Stock Value (List) -->
-    <div class="md:col-span-7 widget p-5 reveal">
+    <div class="md:col-span-7 widget p-5 reveal" tabindex="0">
       <div class="widget-accent accent-blue"></div>
       <div class="flex items-center justify-between">
         <div>
@@ -53,32 +69,158 @@
           <div class="text-lg font-semibold"><span class="countup" data-target="{{ totals.variants|default:0 }}" data-decimals="0"></span></div>
         </div>
       </div>
+      <div class="widget-extra">
+        <div class="grid grid-cols-3 gap-2 mt-3 text-sm">
+          <div class="card p-3 text-center">
+            <div class="muted">Unsold Units</div>
+            <div class="font-semibold">{{ unsold_qty }}</div>
+          </div>
+          <div class="card p-3 text-center">
+            <div class="muted">Brands</div>
+            <div class="font-semibold">{{ brands_count }}</div>
+          </div>
+          <div class="card p-3 text-center">
+            <div class="muted">Categories</div>
+            <div class="font-semibold">{{ categories_count }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2b: Donut + KPIs (5 + 7) -->
+    <div class="md:col-span-5 widget p-5 reveal" tabindex="0">
+      <div class="widget-accent accent-violet"></div>
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-lg font-semibold">Inventory Mix</h2>
+        <div class="text-xs text-slate-400">Total Qty: {{ total_qty }}</div>
+      </div>
+      <div class="flex items-center gap-4">
+        <!-- Conic-gradient donut (no JS) -->
+        <div class="relative w-28 h-28">
+          <div class="absolute inset-0 rounded-full" style="background: conic-gradient({% if status_mix_segments %}{% for seg in status_mix_segments %}{{ seg.color }} {{ seg.frm }}% {{ seg.to }}%{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}rgba(255,255,255,.12) 0% 100%{% endif %});"></div>
+          <div class="absolute inset-4 rounded-full bg-slate-900/90 border border-white/10"></div>
+        </div>
+        <div class="text-sm flex-1 space-y-1">
+          <div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm" style="background:#10b981"></span>Sold</span><span>{{ status_counts.Sold|default:0 }}</span></div>
+          <div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm" style="background:#27A7FF"></span>Listed</span><span>{{ status_counts.Listed|default:0 }}</span></div>
+          <div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm" style="background:#f59e0b"></span>Draft</span><span>{{ status_counts.Draft|default:0 }}</span></div>
+          {% if status_counts.Other %}
+          <div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm" style="background:#a78bfa"></span>Other</span><span>{{ status_counts.Other }}</span></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="md:col-span-7 widget p-5 reveal" tabindex="0">
+      <div class="widget-accent accent-emerald"></div>
+      <h2 class="text-lg font-semibold mb-2">Key Ratios</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+        <div class="card p-3 text-center">
+          <div class="muted">Sell-through</div>
+          <div class="metric-sm"><span class="countup" data-target="{{ sell_through_pct }}" data-decimals="0" data-suffix="%"></span></div>
+        </div>
+        <div class="card p-3 text-center">
+          <div class="muted">Avg List Price</div>
+          <div class="metric-sm">£<span class="countup" data-target="{{ avg_list_price|floatformat:2 }}" data-decimals="2"></span></div>
+        </div>
+        <div class="card p-3 text-center">
+          <div class="muted">Avg Cost</div>
+          <div class="metric-sm">£<span class="countup" data-target="{{ avg_cost|floatformat:2 }}" data-decimals="2"></span></div>
+        </div>
+        <div class="card p-3 text-center">
+          <div class="muted">Categories</div>
+          <div class="metric-sm"><span class="countup" data-target="{{ categories_count }}" data-decimals="0"></span></div>
+        </div>
+      </div>
+      <div class="widget-extra">
+        <div class="mt-3 text-sm card p-3">
+          {% if next_target %}
+            <div class="muted">Next Target</div>
+            <div class="font-semibold">£{{ next_target|floatformat:2 }}</div>
+            <div class="mt-1 muted">Remaining</div>
+            <div class="font-semibold">£{{ remaining_to_target|floatformat:2 }}</div>
+          {% else %}
+            <div class="muted">Goal crushed — set a new milestone!</div>
+          {% endif %}
+        </div>
+      </div>
     </div>
 
     <!-- Row 3: 4 Metrics (3 + 3 + 3 + 3 = 12) -->
-    <div class="md:col-span-3 widget p-5 reveal">
+    <div class="md:col-span-3 widget p-5 reveal" tabindex="0">
       <div class="widget-accent accent-blue"></div>
       <div class="text-sm muted">Sold</div>
       <div class="text-3xl font-bold mt-1"><span class="countup" data-target="{{ totals.sold|default:0 }}" data-decimals="0"></span></div>
+      <div class="widget-extra">
+        <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div class="card p-3 text-center">
+            <div class="muted">Total Profit</div>
+            <div class="font-semibold">£{{ total_profit|floatformat:2 }}</div>
+          </div>
+          <div class="card p-3 text-center">
+            <div class="muted">Avg / Sale</div>
+            <div class="font-semibold">£{{ avg_profit_per_sale|floatformat:2 }}</div>
+          </div>
+          <a href="{% url 'inventory:dashboard' %}?status=Sold" class="col-span-2 btn btn-primary text-center">View Sold</a>
+        </div>
+      </div>
     </div>
-    <div class="md:col-span-3 widget p-5 reveal">
+    <div class="md:col-span-3 widget p-5 reveal" tabindex="0">
       <div class="widget-accent accent-violet"></div>
       <div class="text-sm muted">On Sale</div>
       <div class="text-3xl font-bold mt-1"><span class="countup" data-target="{{ totals.listed|default:0 }}" data-decimals="0"></span></div>
+      <div class="widget-extra">
+        <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div class="card p-3 text-center">
+            <div class="muted">List Value</div>
+            <div class="font-semibold">£{{ listed_list_value|floatformat:2 }}</div>
+          </div>
+          <div class="card p-3 text-center">
+            <div class="muted">Avg Price</div>
+            <div class="font-semibold">£{{ avg_list_price|floatformat:2 }}</div>
+          </div>
+          <a href="{% url 'inventory:dashboard' %}?status=Listed" class="col-span-2 btn btn-primary text-center">View Listed</a>
+        </div>
+      </div>
     </div>
-    <div class="md:col-span-3 widget p-5 reveal">
+    <div class="md:col-span-3 widget p-5 reveal" tabindex="0">
       <div class="widget-accent accent-amber"></div>
       <div class="text-sm muted">Drafts</div>
       <div class="text-3xl font-bold mt-1"><span class="countup" data-target="{{ totals.draft|default:0 }}" data-decimals="0"></span></div>
+      <div class="widget-extra">
+        <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div class="card p-3 text-center">
+            <div class="muted">Unsold Units</div>
+            <div class="font-semibold">{{ unsold_qty }}</div>
+          </div>
+          <div class="card p-3 text-center">
+            <div class="muted">Categories</div>
+            <div class="font-semibold">{{ categories_count }}</div>
+          </div>
+          <a href="{% url 'inventory:dashboard' %}?status=Draft" class="col-span-2 btn btn-primary text-center">View Drafts</a>
+        </div>
+      </div>
     </div>
-    <div class="md:col-span-3 widget p-5 reveal">
+    <div class="md:col-span-3 widget p-5 reveal" tabindex="0">
       <div class="widget-accent accent-pink"></div>
       <div class="text-sm muted">Products</div>
       <div class="text-3xl font-bold mt-1"><span class="countup" data-target="{{ totals.products|default:0 }}" data-decimals="0"></span></div>
+      <div class="widget-extra">
+        <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div class="card p-3 text-center">
+            <div class="muted">Brands</div>
+            <div class="font-semibold">{{ brands_count }}</div>
+          </div>
+          <div class="card p-3 text-center">
+            <div class="muted">Categories</div>
+            <div class="font-semibold">{{ categories_count }}</div>
+          </div>
+          <a href="{% url 'inventory:dashboard' %}" class="col-span-2 btn btn-primary text-center">Open Dashboard</a>
+        </div>
+      </div>
     </div>
 
     <!-- Row 4: Milestone + Categories (7 + 5 = 12) -->
-    <div class="md:col-span-7 widget p-5 reveal">
+    <div class="md:col-span-7 widget p-5 reveal" tabindex="0">
       <div class="widget-accent accent-violet"></div>
       <div class="flex items-center justify-between">
         <div>
@@ -101,7 +243,7 @@
     </div>
 
     <!-- Top Categories -->
-    <div class="md:col-span-5 widget p-5 reveal">
+    <div class="md:col-span-5 widget p-5 reveal" tabindex="0">
       <div class="widget-accent accent-amber"></div>
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-xl font-semibold">Top Categories (Sold)</h2>
@@ -122,32 +264,42 @@
       </div>
     </div>
 
-    <!-- Row 5: Recent + Top Brands (8 + 4 = 12) -->
-    <div class="md:col-span-8 widget p-5 reveal">
+    <!-- Row 5: Quick Search + Recent + Top Brands (8 + 4 = 12) -->
+    <div class="md:col-span-8 widget p-5 reveal" tabindex="0">
       <div class="widget-accent accent-blue"></div>
+      <div class="mb-4">
+        <form method="get" action="{% url 'inventory:dashboard' %}" class="flex gap-2">
+          <input name="q" placeholder="Quick search by SKU, name, brand..." class="flex-1 bg-white/10 border border-white/10 rounded-xl p-3" />
+          <button class="btn btn-primary mobile-full">Search</button>
+        </form>
+      </div>
       <h2 class="text-xl font-semibold mb-3">Recent Activity</h2>
-      <div class="divide-y divide-white/10">
-        {% for v in recent %}
-          <div class="py-2 flex items-center gap-3">
-            <div class="text-xs font-mono bg-white/10 rounded px-2 py-1">{{ v.variant_sku }}</div>
-            <div class="flex-1">
-              <div class="text-slate-200">{{ v.product.name }}</div>
-              <div class="text-slate-400 text-xs">{{ v.product.brand }} • {{ v.product.category }} • {{ v.size }} • {{ v.status }}</div>
+      <div class="-mx-3 overflow-x-auto snap-x snap-mandatory md:mx-0 md:overflow-visible md:snap-none">
+        <div class="px-3 flex gap-3 md:block md:px-0">
+          {% for v in recent %}
+            <div class="min-w-[260px] md:min-w-0 md:w-auto md:block card p-3 snap-start">
+              <div class="flex items-center gap-3">
+                <div class="text-xs font-mono bg-white/10 rounded px-2 py-1">{{ v.variant_sku }}</div>
+                <div class="text-slate-200 truncate">{{ v.product.name }}</div>
+              </div>
+              <div class="text-slate-400 text-xs mt-1 truncate">{{ v.product.brand }} • {{ v.product.category }} • {{ v.size }} • {{ v.status }}</div>
+              <div class="mt-2">
+                {% if v.status == 'Sold' %}
+                  <span class="badge">£{{ v.profit|floatformat:2 }} profit</span>
+                {% else %}
+                  <span class="badge">£{{ v.price|floatformat:2 }} listed</span>
+                {% endif %}
+              </div>
             </div>
-            {% if v.status == 'Sold' %}
-              <div class="text-emerald-400">£{{ v.profit|floatformat:2 }} profit</div>
-            {% else %}
-              <div class="text-slate-400">£{{ v.price|floatformat:2 }} listed</div>
-            {% endif %}
-          </div>
-        {% empty %}
-          <div class="text-slate-400">No activity yet.</div>
-        {% endfor %}
+          {% empty %}
+            <div class="text-slate-400">No activity yet.</div>
+          {% endfor %}
+        </div>
       </div>
     </div>
 
     <!-- Top Brands -->
-    <div class="md:col-span-4 widget p-5 reveal">
+    <div class="md:col-span-4 widget p-5 reveal" tabindex="0">
       <div class="widget-accent accent-pink"></div>
       <h2 class="text-xl font-semibold mb-3">Top Brands (Sold)</h2>
       <div class="space-y-2">
@@ -163,10 +315,16 @@
           <div class="text-slate-400">No brands yet.</div>
         {% endfor %}
       </div>
+      <div class="widget-extra">
+        <div class="mt-3 text-sm card p-3">
+          <div class="muted">Tip</div>
+          <div>Click Dashboard to filter by your top brands and refresh stale listings.</div>
+        </div>
+      </div>
     </div>
 
     <!-- Row 6: Quick Actions full width to avoid gaps -->
-    <div class="md:col-span-12 widget p-5 reveal">
+    <div class="md:col-span-12 widget p-5 reveal" tabindex="0">
       <div class="widget-accent accent-emerald"></div>
       <h2 class="text-xl font-semibold mb-3">Quick Actions</h2>
       <div class="grid grid-cols-2 gap-2">
@@ -179,5 +337,41 @@
         Aim for 1 listing a day. Your future self will thank you.
       </div>
     </div>
+
+    <!-- Row 6b: Top Locations -->
+    <div class="md:col-span-12 widget p-5 reveal" tabindex="0">
+      <div class="widget-accent accent-violet"></div>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-semibold">Top Locations</h2>
+        <span class="text-xs text-slate-400">Where your stock lives</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {% for row in top_locations %}
+          <div class="list-row">
+            <div class="list-title">{{ row.location }}</div>
+            <div class="flex items-center gap-2">
+              <div class="w-28 progress"><span class="loc-bar" data-q="{{ row.q }}" data-max="{{ top_locations_max }}"></span></div>
+              <span class="badge">{{ row.q }}</span>
+            </div>
+          </div>
+        {% empty %}
+          <div class="text-slate-400">No location data yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+    <script>
+      // Compute progress width for location bars
+      (function(){
+        const bars = document.querySelectorAll('.loc-bar');
+        bars.forEach(b=>{
+          const q = parseFloat(b.getAttribute('data-q')||'0');
+          const m = parseFloat(b.getAttribute('data-max')||'0');
+          const pct = m > 0 ? Math.round((q/m)*100) : 0;
+          const width = pct + '%';
+          b.setAttribute('data-width', width);
+          b.style.width = width;
+        });
+      })();
+    </script>
   </div>
 {% endblock %}
