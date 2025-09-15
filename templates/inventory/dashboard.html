@@ -5,7 +5,8 @@
   <!-- Sticky toolbar: search, filters, sort, quick actions -->
   <div class="md:sticky md:top-2 z-40 card p-2 md:p-3 mb-3 md:mb-4">
     <form method="get" class="flex flex-wrap items-center gap-2 text-sm md:text-base">
-      <input type="text" name="q" value="{{ q }}" placeholder="Search name, brand, or SKU…" class="flex-1 min-w-[160px] sm:min-w-[220px] md:w-96 bg-white/10 border border-white/10 rounded-xl p-2 md:p-3" />
+      <label for="dash-q" class="sr-only">Search</label>
+      <input id="dash-q" type="text" name="q" value="{{ q }}" placeholder="Search name, brand, or SKU…" class="flex-1 min-w-[160px] sm:min-w-[220px] md:w-96 bg-white/10 border border-white/10 rounded-xl p-2 md:p-3" />
       <select name="cat" class="bg-white/10 border border-white/10 rounded-xl p-2 md:p-2.5 text-sm md:text-base">
         <option value="">All categories…</option>
         {% for c in categories %}
@@ -75,9 +76,9 @@
         {% for c in categories %}<option value="{{ c }}">{% endfor %}
       </datalist>
       <div class="ml-auto flex items-center gap-2">
-        <span id="selectedCount" class="text-sm text-slate-400">0 selected</span>
-        <button class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900">Apply</button>
-        <button type="button" id="toggleAll" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Toggle all</button>
+        <span id="selectedCount" role="status" aria-live="polite" class="text-sm text-slate-400">0 selected</span>
+        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900">Apply</button>
+        <button type="button" id="toggleAll" aria-label="Toggle all checkboxes" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Toggle all</button>
       </div>
     </div>
 
@@ -121,7 +122,7 @@
             {% if v and v.images.all %}
               <div class="grid grid-cols-3 gap-1 p-2">
                 {% for img in v.images.all|slice:':3' %}
-                  <img src="{{ img.image.url }}" class="h-20 md:h-24 w-full object-cover rounded-lg" alt="">
+                  <img src="{{ img.image.url }}" class="h-20 md:h-24 w-full object-cover rounded-lg" alt="{{ p.name }} image {{ forloop.counter }}" loading="lazy">
                 {% endfor %}
               </div>
             {% endif %}

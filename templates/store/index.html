@@ -5,7 +5,8 @@
       <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">Storefront (Dev)</h1>
       <p class="text-slate-300">Preview of listed items. This page isn’t linked in the app.</p>
       <form method="get" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-2">
-        <input name="q" value="{{ q }}" placeholder="Search products, brand, SKU…" class="bg-white/10 border border-white/10 rounded-xl p-3" />
+        <label for="store-search" class="sr-only">Search</label>
+        <input id="store-search" name="q" value="{{ q }}" placeholder="Search products, brand, SKU…" class="bg-white/10 border border-white/10 rounded-xl p-3" />
         <select name="brand" class="bg-white/10 border border-white/10 rounded-xl p-3">
           <option value="">All brands…</option>
           {% for b in brands %}<option value="{{ b }}" {% if brand == b %}selected{% endif %}>{{ b }}</option>{% endfor %}
@@ -14,7 +15,7 @@
           <option value="">All categories…</option>
           {% for c in categories %}<option value="{{ c }}" {% if cat == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
         </select>
-        <button class="btn btn-primary">Filter</button>
+        <button type="submit" class="btn btn-primary">Filter</button>
       </form>
     </div>
 
@@ -24,7 +25,7 @@
           <div class="widget-accent accent-blue"></div>
           {% with img=v.images.all.0 %}
             {% if img %}
-              <img src="{{ img.image.url }}" class="w-full h-40 object-cover rounded-lg" alt="">
+              <img src="{{ img.image.url }}" class="w-full h-40 object-cover rounded-lg" alt="{{ v.product.name }} image" loading="lazy">
             {% else %}
               <div class="w-full h-40 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center text-slate-400">No image</div>
             {% endif %}
@@ -41,4 +42,3 @@
     </div>
   </div>
 {% endblock %}
-

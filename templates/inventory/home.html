@@ -312,15 +312,18 @@
       <div class="widget-accent accent-blue"></div>
       <div class="mb-4">
         <form method="get" action="{% url 'inventory:dashboard' %}" class="flex gap-2">
-          <input name="q" placeholder="Quick search by SKU, name, brand..." class="flex-1 bg-white/10 border border-white/10 rounded-xl p-3" />
-          <button class="btn btn-primary mobile-full">Search</button>
+          <label for="quick-search" class="sr-only">Quick search</label>
+          <input id="quick-search" name="q" placeholder="Quick search by SKU, name, brand..." class="flex-1 bg-white/10 border border-white/10 rounded-xl p-3" />
+          <button type="submit" class="btn btn-primary mobile-full">Search</button>
         </form>
       </div>
       <h2 class="text-xl font-semibold mb-3">Recent Activity</h2>
       <div class="-mx-3 overflow-x-auto snap-x snap-mandatory md:mx-0 md:overflow-visible md:snap-none">
-        <div class="px-3 flex gap-3 md:block md:px-0">
+        <div class="px-3 flex gap-4 md:block md:px-0 md:space-y-3">
           {% for v in recent %}
-            <div class="min-w-[260px] md:min-w-0 md:w-auto md:block card p-3 snap-start">
+            <a href="{% url 'inventory:product_detail' v.product.pk %}#var-{{ v.pk }}"
+               class="block min-w-[260px] md:min-w-0 md:w-auto card p-3 snap-start"
+               aria-label="Open {{ v.product.name }} ({{ v.variant_sku }})">
               <div class="flex items-center gap-3">
                 <div class="text-xs font-mono bg-white/10 rounded px-2 py-1">{{ v.variant_sku }}</div>
                 <div class="text-slate-200 truncate">{{ v.product.name }}</div>
@@ -333,7 +336,7 @@
                   <span class="badge">£{{ v.price|floatformat:2 }} listed</span>
                 {% endif %}
               </div>
-            </div>
+            </a>
           {% empty %}
             <div class="text-slate-400">No activity yet.</div>
           {% endfor %}

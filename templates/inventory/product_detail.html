@@ -27,7 +27,7 @@
     </div>
 
     {% for v in product.variants.all %}
-      <div class="card p-5">
+      <div id="var-{{ v.pk }}" class="card p-5">
         <div class="flex flex-wrap items-center gap-3 mb-2">
           <div class="font-mono text-sm bg-white/10 rounded px-2 py-1">Variant {{ forloop.counter }}</div>
           <div class="font-mono text-sm bg-white/10 rounded px-2 py-1">{{ v.variant_sku }}</div>
@@ -54,7 +54,7 @@
         {% if v.images.all %}
           <div class="grid md:grid-cols-4 gap-2 mt-4">
             {% for img in v.images.all %}
-              <img src="{{ img.image.url }}" class="w-full h-40 object-cover rounded-xl" alt="">
+              <img src="{{ img.image.url }}" class="w-full h-40 object-cover rounded-xl" alt="{{ product.name }} variant image {{ forloop.counter }}" loading="lazy">
             {% endfor %}
           </div>
         {% endif %}

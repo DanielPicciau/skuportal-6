@@ -25,7 +25,7 @@
       {% if v.images.all|length > 1 %}
       <div class="thumbs no-scrollbar mt-2" id="thumbs">
         {% for im in v.images.all %}
-          <img src="{{ im.image.url }}" data-src="{{ im.image.url }}" alt="thumb {{ forloop.counter }}" class="{% if forloop.first %}active{% endif %}">
+          <img src="{{ im.image.url }}" data-src="{{ im.image.url }}" alt="{{ v.product.name }} thumbnail {{ forloop.counter }}" class="{% if forloop.first %}active{% endif %}" loading="lazy">
         {% endfor %}
       </div>
       {% endif %}
@@ -40,7 +40,7 @@
       <form method="post" class="mt-5 flex items-center gap-2">
         {% csrf_token %}
         <input type="number" name="qty" value="1" min="1" class="w-24 bg-white/10 border border-white/10 rounded-xl p-2">
-        <button class="btn btn-primary">Add to cart</button>
+        <button type="submit" class="btn btn-primary">Add to cart</button>
         <a href="{% url 'store_cart' %}" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">View cart</a>
       </form>
       <div class="mt-6 grid grid-cols-2 gap-3 text-sm">

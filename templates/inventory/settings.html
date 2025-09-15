@@ -11,21 +11,21 @@
     <div class="widget p-5">
       <div class="widget-accent accent-emerald"></div>
       <h2 class="text-xl font-semibold mb-3">Account</h2>
-      <form method="post" class="space-y-3">
+      <form method="post" class="space-y-3" autocomplete="on">
         {% csrf_token %}
         <input type="hidden" name="action" value="change_password">
         <div class="grid md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-sm text-slate-300 mb-1">Current password</label>
-            {{ pwd_form.old_password|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+            <label for="old_password" class="block text-sm text-slate-300 mb-1">Current password</label>
+            {{ pwd_form.old_password|add_attr:"id=old_password"|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
           </div>
           <div>
-            <label class="block text-sm text-slate-300 mb-1">New password</label>
-            {{ pwd_form.new_password1|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+            <label for="new_password1" class="block text-sm text-slate-300 mb-1">New password</label>
+            {{ pwd_form.new_password1|add_attr:"id=new_password1"|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
           </div>
           <div>
-            <label class="block text-sm text-slate-300 mb-1">Confirm new password</label>
-            {{ pwd_form.new_password2|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
+            <label for="new_password2" class="block text-sm text-slate-300 mb-1">Confirm new password</label>
+            {{ pwd_form.new_password2|add_attr:"id=new_password2"|add_class:"w-full bg-white/10 border border-white/10 rounded-xl p-3" }}
           </div>
         </div>
         <button class="btn btn-primary">Update Password</button>
@@ -36,21 +36,21 @@
     <div class="widget p-5">
       <div class="widget-accent accent-violet"></div>
       <h2 class="text-xl font-semibold mb-3">Team</h2>
-      <form method="post" class="space-y-3">
+      <form method="post" class="space-y-3" autocomplete="on">
         {% csrf_token %}
         <input type="hidden" name="action" value="create_comanager">
         <div class="grid md:grid-cols-3 gap-3">
           <div>
-            <label class="block text-sm text-slate-300 mb-1">Username</label>
-            <input name="username" class="w-full bg-white/10 border border-white/10 rounded-xl p-3" required>
+            <label for="team-username" class="block text-sm text-slate-300 mb-1">Username</label>
+            <input id="team-username" name="username" class="w-full bg-white/10 border border-white/10 rounded-xl p-3" required autocomplete="username">
           </div>
           <div>
-            <label class="block text-sm text-slate-300 mb-1">Password</label>
-            <input name="password1" type="password" class="w-full bg-white/10 border border-white/10 rounded-xl p-3" required>
+            <label for="team-password1" class="block text-sm text-slate-300 mb-1">Password</label>
+            <input id="team-password1" name="password1" type="password" class="w-full bg-white/10 border border-white/10 rounded-xl p-3" required autocomplete="new-password">
           </div>
           <div>
-            <label class="block text-sm text-slate-300 mb-1">Confirm Password</label>
-            <input name="password2" type="password" class="w-full bg-white/10 border border-white/10 rounded-xl p-3" required>
+            <label for="team-password2" class="block text-sm text-slate-300 mb-1">Confirm Password</label>
+            <input id="team-password2" name="password2" type="password" class="w-full bg-white/10 border border-white/10 rounded-xl p-3" required autocomplete="new-password">
           </div>
         </div>
         <button class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Create Co‑manager</button>

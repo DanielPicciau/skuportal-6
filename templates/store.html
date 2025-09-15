@@ -8,8 +8,9 @@
   <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-3">
     <a href="/store/" class="text-lg font-bold">Store</a>
     <form method="get" class="ml-auto hidden md:flex items-center gap-2">
-      <input name="q" value="{{ q }}" placeholder="Search…" class="w-64 bg-white/10 border border-white/10 rounded-xl p-2.5">
-      <button class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Search</button>
+      <label for="store-q" class="sr-only">Search</label>
+      <input id="store-q" name="q" value="{{ q }}" placeholder="Search…" class="w-64 bg-white/10 border border-white/10 rounded-xl p-2.5">
+      <button type="submit" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Search</button>
       <a href="{% url 'store_cart' %}" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Cart</a>
     </form>
     <a href="{% url 'store_cart' %}" class="ml-auto md:hidden px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">Cart</a>
@@ -23,7 +24,8 @@
         <p class="text-slate-300">Hand‑picked listings, updated as you post.</p>
       </div>
       <form method="get" class="w-full md:w-auto grid grid-cols-1 md:grid-cols-5 gap-2">
-        <input name="q" value="{{ q }}" placeholder="Search products, brand, SKU…" class="md:col-span-2 bg-white/10 border border-white/10 rounded-xl p-3" />
+        <label for="store-q2" class="sr-only">Search</label>
+        <input id="store-q2" name="q" value="{{ q }}" placeholder="Search products, brand, SKU…" class="md:col-span-2 bg-white/10 border border-white/10 rounded-xl p-3" />
         <select name="sort" class="bg-white/10 border border-white/10 rounded-xl p-3">
           <option value="newest" {% if sort == 'newest' or not sort %}selected{% endif %}>Newest</option>
           <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: Low → High</option>
@@ -36,7 +38,7 @@
           <span class="text-xs text-slate-300">£</span>
           <input type="number" name="max_price" value="{% if max_price %}{{ max_price }}{% endif %}" placeholder="Max" step="5" class="w-24 bg-transparent outline-none">
         </div>
-        <button class="btn btn-primary">Apply</button>
+        <button type="submit" class="btn btn-primary">Apply</button>
       </form>
       {% if bounds.mn and bounds.mx %}
       <div class="w-full mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 items-center">
@@ -76,7 +78,7 @@
             {% if v.images.all %}
               {% for im in v.images.all|slice:':8' %}
                 <div class="image-slide flex items-center justify-center bg-white/5 p-2">
-                  <img src="{{ im.image.url }}" alt="{{ v.product.name }} image {{ forloop.counter }}" class="max-w-full h-auto"/>
+                  <img src="{{ im.image.url }}" alt="{{ v.product.name }} image {{ forloop.counter }}" class="max-w-full h-auto" loading="lazy"/>
                 </div>
               {% endfor %}
             {% else %}
@@ -101,7 +103,7 @@
           <form method="post" action="{% url 'store_product' v.id %}" class="js-stop">
             {% csrf_token %}
             <input type="hidden" name="qty" value="1">
-            <button class="px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 text-sm">Add</button>
+            <button type="submit" class="px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 text-sm">Add</button>
           </form>
         </div>
       </div>
