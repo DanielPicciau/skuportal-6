@@ -63,6 +63,45 @@ Dashboard filtering uses the `STATUSES` list; search supports product fields and
 
 - If you want a static marketing site on GitHub Pages, you can keep a separate Pages repo and link to your deployed app (Render/Fly/etc.) for the authenticated interface.
 
+## Deploying on PythonAnywhere
+
+1. Create a Python 3.12 virtualenv on PythonAnywhere and install the project:
+   ```bash
+   pip install --upgrade pip
+   pip install -r /home/<username>/skuportal/requirements.txt
+   ```
+2. In the **Web** tab, point the working directory to `/home/<username>/skuportal` and use the existing `manage.py` as the project root.
+3. Edit the WSGI configuration (via the **WSGI configuration file** link) so it loads the app:
+   ```python
+   import os
+   import sys
+
+   path = '/home/<username>/skuportal'
+   if path not in sys.path:
+       sys.path.append(path)
+
+   os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'skuportal.settings')
+
+   from django.core.wsgi import get_wsgi_application
+   application = get_wsgi_application()
+   ```
+4. In the **Environment Variables** section of the web app settings add:
+   ```text
+   DJANGO_DEBUG=0
+   DJANGO_SECRET_KEY=<generate-a-strong-secret>
+   DJANGO_ALLOWED_HOSTS=<username>.pythonanywhere.com
+   DJANGO_CSRF_TRUSTED_ORIGINS=https://<username>.pythonanywhere.com
+   CSV_SYNC_ENABLED=0
+   ```
+   Include any additional custom domains on both `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` (comma separated).
+5. From a PythonAnywhere Bash console run:
+   ```bash
+   cd /home/<username>/skuportal
+   python manage.py migrate
+   python manage.py collectstatic --noinput
+   ```
+6. Back in the **Web** tab, reload the application. WhiteNoise serves collected static files automatically, so no extra static file mapping is required.
+
 ## Media
 
 Image uploads are stored in `media/`. In development, Django serves them automatically with `DEBUG=True`.
