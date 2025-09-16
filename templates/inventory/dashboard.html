@@ -83,9 +83,26 @@
       </div>
     </div>
 
+    {% if top_variant %}
+    <div class="rounded-2xl bg-amber-400/10 border border-amber-300/40 p-3 md:p-4 mb-4 flex items-center gap-3">
+      {% if top_variant_image %}
+        <img src="{{ top_variant_image.image.url }}" alt="{{ top_variant.product.name }}" class="h-16 w-16 md:h-20 md:w-20 rounded-xl object-cover border border-white/20">
+      {% else %}
+        <div class="h-16 w-16 md:h-20 md:w-20 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-xs text-slate-300">No photo</div>
+      {% endif %}
+      <div class="flex-1">
+        <p class="text-xs uppercase tracking-wide text-amber-200/80">Highest Price Item</p>
+        <div class="text-base md:text-lg font-semibold text-white">{{ top_variant.product.name }}</div>
+        <div class="text-sm md:text-base text-slate-100">£{{ top_variant.price|floatformat:2 }}{% if top_variant.size %} • {{ top_variant.size }}{% endif %}{% if top_variant.product.brand %} • {{ top_variant.product.brand }}{% endif %}</div>
+      </div>
+      <a href="{% url 'inventory:product_detail' top_variant.product.pk %}" class="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-sm text-slate-900 font-medium">View</a>
+    </div>
+    {% endif %}
+
     <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
       {% for p in products %}
         <label class="block widget transition overflow-hidden relative cursor-pointer">
+      
           <input type="checkbox" name="ids" value="{{ p.pk }}" form="bulkForm" class="absolute top-3 left-3 h-5 w-5 rounded border-white/30 bg-white/10 z-10">
           <div class="p-3 md:p-4">
             <div class="flex items-center justify-between mb-2">

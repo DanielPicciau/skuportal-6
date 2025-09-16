@@ -52,7 +52,7 @@ def dashboard(request):
         and request.user.groups.filter(name=CO_MANAGER_GROUP).exists()
     ):
         archived_flag = False
-    products_qs = Product.objects.prefetch_related('variants')
+    products_qs = Product.objects.prefetch_related('variants__images')
     if q:
         products_qs = products_qs.filter(
             Q(name__icontains=q) |
@@ -86,7 +86,19 @@ def dashboard(request):
         'category_za': '-category',
     }
     order_by = sort_map.get(sort, '-id')
-    products = products_qs.order_by(order_by).distinct()[:100]
+    products = list(products_qs.order_by(order_by).distinct()[:100])
+    top_variant = None
+    top_variant_image = None
+    top_price = Decimal('-1')
+    for product in products:
+        for variant in product.variants.all():
+            if variant.price is None:
+                continue
+            if variant.price > top_price:
+                top_price = variant.price
+                top_variant = variant
+                images = list(getattr(variant, 'images').all())
+                top_variant_image = images[0] if images else None
     # Build category suggestions from constants + DB
     db_cats = list(Product.objects.values_list('category', flat=True).distinct())
     cat_suggestions = sorted({*(c for c in CATEGORIES), *(c for c in db_cats if c)})
@@ -99,6 +111,8 @@ def dashboard(request):
         'statuses': STATUSES,
         'categories': cat_suggestions,
         'show_archived': archived_flag,
+        'top_variant': top_variant,
+        'top_variant_image': top_variant_image,
     })
 
 @login_required
