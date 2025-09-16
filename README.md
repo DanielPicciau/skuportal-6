@@ -40,10 +40,28 @@ Dates accepted: `DD/MM/YYYY`, `YYYY-MM-DD`, `DD-MM-YYYY`.
 
 ## Configuration
 
+- Environment variables: add a `.env` file in the project root (auto-loaded on startup) or export vars before running management commands.
 - Fees: Defaults to Vinted — 5% + £0.70. Edit `inventory/constants.py` (`VINTED_FEE_PERCENT`, `VINTED_FIXED_FEE`). If a variant has `fees` left as 0, fees auto-calculate from these settings when saving.
 - Lists: Edit `inventory/constants.py` to customize `CATEGORIES`, `CONDITIONS`, and `STATUSES`. Forms use these lists for dropdowns; stored values are plain text (no hard DB choices), so you can change lists anytime.
 
 Dashboard filtering uses the `STATUSES` list; search supports product fields and both SKUs.
+
+## eBay Browse API
+
+Enable the optional eBay panel on the product form by setting these environment variables before starting Django. The app now auto-loads a root `.env` file, so you can drop the values there or export them in your shell:
+
+```bash
+export EBAY_ENABLED=1
+export EBAY_ENV=sandbox  # or production when you go live
+export EBAY_CLIENT_ID="<your-app-id>"
+export EBAY_CLIENT_SECRET="<your-cert-id>"
+export EBAY_MARKETPLACE_ID=EBAY_GB  # choose the marketplace you care about
+export EBAY_SCOPE="https://api.ebay.com/oauth/api_scope/buy.browse.readonly"
+```
+
+Never commit raw credentials. The sandbox keys you generated in the eBay developer portal go into `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET`. If you rotate the Cert ID, update the variable accordingly. When you are ready for production, create a production keyset in the eBay dashboard and switch `EBAY_ENV=production`.
+
+The backend uses the client-credentials OAuth flow, so no user refresh token is required. The included `EbayClient` exchanges the App ID and Cert ID for an application access token and proxies Browse API searches through `/inventory/api/ebay/search`.
 
 ## Security & Deployment
 
