@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-{% load static %}
+{% load static form_extras %}
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -30,7 +30,7 @@
     body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji'; }
   </style>
 </head>
-<body class="min-h-screen {% if user.is_authenticated and user.is_staff and not user.is_superuser %}cmgr{% endif %}">
+<body class="min-h-screen {% if user|is_comanager %}cmgr{% endif %}">
   <a href="#content" class="skip-link">Skip to content</a>
   <nav class="sticky top-0 z-50 backdrop-blur-md bg-white/70 dark:bg-slate-900/70 border-b border-black/10 dark:border-white/10 text-slate-800 dark:text-slate-100">
     <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-3 sm:gap-4">

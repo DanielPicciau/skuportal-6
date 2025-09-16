@@ -37,7 +37,8 @@
         <div class="inline-flex rounded-xl overflow-hidden border border-white/10">
           <a href="?{% if q %}q={{ q }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if cat %}cat={{ cat }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}archived=0"
              class="px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm {% if not show_archived %}bg-white/20{% else %}bg-white/10 hover:bg-white/20{% endif %}">Active</a>
-          {% if not user.is_staff or user.is_superuser %}
+          {% if user|is_comanager %}
+          {% else %}
           <a href="?{% if q %}q={{ q }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if cat %}cat={{ cat }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}archived=1"
              class="px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm {% if show_archived %}bg-white/20{% else %}bg-white/10 hover:bg-white/20{% endif %}">Archived</a>
           {% endif %}

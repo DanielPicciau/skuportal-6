@@ -9,6 +9,9 @@ CATEGORIES = [
     'Clothing', 'Shoes', 'Accessories', 'Bags', 'Jewelry', 'Beauty', 'Kids', 'Home', 'Electronics', 'Other'
 ]
 
+# Name used for the co-manager Django auth group
+CO_MANAGER_GROUP = 'Co-managers'
+
 CONDITIONS = [
     'New with tags', 'New without tags', 'Like new', 'Good', 'Fair', 'Poor', 'Vintage', 'Defective'
 ]
@@ -16,4 +19,3 @@ CONDITIONS = [
 STATUSES = [
     'Draft', 'To Photograph', 'To List', 'Listed', 'Reserved', 'Sold', 'Returned', 'Donated'
 ]
-

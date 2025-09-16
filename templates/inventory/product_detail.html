@@ -38,11 +38,11 @@
           <div><span class="text-slate-400">Condition:</span> {{ v.condition }}</div>
           <div><span class="text-slate-400">Colour:</span> {{ v.colour }}</div>
           <div><span class="text-slate-400">Date:</span> {{ v.date }}</div>
-          <div><span class="text-slate-400">Cost:</span> {% if user.is_staff and not user.is_superuser %}<span class="money">£{{ v.cost|mask_digits }}</span>{% else %}£{{ v.cost }}{% endif %}</div>
-          <div><span class="text-slate-400">Price:</span> {% if user.is_staff and not user.is_superuser %}<span class="money">£{{ v.price|mask_digits }}</span>{% else %}£{{ v.price }}{% endif %}</div>
-          <div><span class="text-slate-400">Fees:</span> {% if user.is_staff and not user.is_superuser %}<span class="money">£{{ v.fees|mask_digits }}</span>{% else %}£{{ v.fees }}{% endif %}</div>
-          <div><span class="text-slate-400">Net:</span> {% if user.is_staff and not user.is_superuser %}<span class="money">£{{ v.net|mask_digits }}</span>{% else %}£{{ v.net }}{% endif %}</div>
-          <div><span class="text-slate-400">Profit:</span> {% if user.is_staff and not user.is_superuser %}<span class="money">£{{ v.profit|mask_digits }}</span>{% else %}£{{ v.profit }}{% endif %}</div>
+          <div><span class="text-slate-400">Cost:</span> {% if user|is_comanager %}<span class="money">£{{ v.cost|mask_digits }}</span>{% else %}£{{ v.cost }}{% endif %}</div>
+          <div><span class="text-slate-400">Price:</span> {% if user|is_comanager %}<span class="money">£{{ v.price|mask_digits }}</span>{% else %}£{{ v.price }}{% endif %}</div>
+          <div><span class="text-slate-400">Fees:</span> {% if user|is_comanager %}<span class="money">£{{ v.fees|mask_digits }}</span>{% else %}£{{ v.fees }}{% endif %}</div>
+          <div><span class="text-slate-400">Net:</span> {% if user|is_comanager %}<span class="money">£{{ v.net|mask_digits }}</span>{% else %}£{{ v.net }}{% endif %}</div>
+          <div><span class="text-slate-400">Profit:</span> {% if user|is_comanager %}<span class="money">£{{ v.profit|mask_digits }}</span>{% else %}£{{ v.profit }}{% endif %}</div>
           <div><span class="text-slate-400">Margin:</span> {{ v.margin }}%</div>
           <div><span class="text-slate-400">Qty:</span> {{ v.qty }}</div>
           <div><span class="text-slate-400">Location:</span> {{ v.location }}</div>

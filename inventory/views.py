@@ -5,14 +5,14 @@ from django.urls import reverse
 from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.db.models import Q, Sum, F, DecimalField, ExpressionWrapper, Avg, Min, Max
 import math
 from decimal import Decimal
-from .constants import STATUSES, CATEGORIES
+from .constants import STATUSES, CATEGORIES, CO_MANAGER_GROUP
 from .models import Product, Variant, ProductImage
 from .forms import ProductForm, VariantForm, ImportFileForm
 from .csv_sync import schedule_csv_sync
@@ -46,7 +46,11 @@ def dashboard(request):
     sort = filters.get('sort','')
     archived_flag = (filters.get('archived','') in ('1','true','yes'))
     # Co-managers cannot view archived
-    if request.user.is_authenticated and request.user.is_staff and not request.user.is_superuser:
+    if (
+        request.user.is_authenticated
+        and request.user.is_staff
+        and request.user.groups.filter(name=CO_MANAGER_GROUP).exists()
+    ):
         archived_flag = False
     products_qs = Product.objects.prefetch_related('variants')
     if q:
@@ -599,6 +603,8 @@ def settings_view(request):
                 u = User.objects.create_user(username=username, password=p1)
                 u.is_staff = True
                 u.save()
+                group, _ = Group.objects.get_or_create(name=CO_MANAGER_GROUP)
+                u.groups.add(group)
                 messages.success(request, f'Co-manager account "{username}" created.')
                 return redirect('inventory:settings')
     return render(request, 'inventory/settings.html', {
